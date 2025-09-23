@@ -6,9 +6,11 @@ import Register from './pages/Register';
 import NewHome from './pages/NewHome';
 import RegisterBusiness from './pages/RegisterBusiness';
 import BusinessDashboard from './pages/BusinessDashboard';
+import MyBusiness from './pages/MyBusiness';
 import BusinessDiscovery from './pages/BusinessDiscovery';
 import BookingPage from './pages/BookingPage';
 import SubscriptionPage from './pages/SubscriptionPage';
+import ProfilePage from './pages/ProfilePage';
 import CommissionDashboard from './components/CommissionDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -27,6 +29,7 @@ function AnimatedRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/discover" element={<BusinessDiscovery />} />
         <Route path="/booking/:businessId" element={<BookingPage />} />
+        <Route path="/profile" element={<NewHome />} /> {/* Redirect profile to home with profile section */}
         <Route
           path="/"
           element={
@@ -48,6 +51,22 @@ function AnimatedRoutes() {
         element={
           <ProtectedRoute>
             <BusinessDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-business"
+        element={
+          <ProtectedRoute>
+            <MyBusiness />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         }
       />

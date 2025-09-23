@@ -35,4 +35,87 @@ export const createBooking = async (bookingData) => {
   }
 };
 
+// Reservation management functions
+export const acceptReservation = async (reservationId) => {
+  try {
+    const response = await API.put(`/api/business/reservations/${reservationId}/accept`);
+    return response.data;
+  } catch (error) {
+    console.error('Error accepting reservation:', error);
+    throw error;
+  }
+};
+
+export const declineReservation = async (reservationId, reason = '') => {
+  try {
+    const response = await API.put(`/api/business/reservations/${reservationId}/decline`, {
+      reason
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error declining reservation:', error);
+    throw error;
+  }
+};
+
+export const updateReservationStatus = async (reservationId, status) => {
+  try {
+    const response = await API.put(`/api/business/reservations/${reservationId}`, {
+      status
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating reservation status:', error);
+    throw error;
+  }
+};
+
+export const getReservationStats = async () => {
+  try {
+    const response = await API.get('/api/business/reservations/stats');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching reservation stats:', error);
+    throw error;
+  }
+};
+
+// User booking management functions
+export const rescheduleBooking = async (bookingId, newDate, newTime) => {
+  try {
+    const response = await API.put(`/api/user/bookings/${bookingId}`, {
+      action: 'reschedule',
+      date: newDate,
+      time: newTime
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error rescheduling booking:', error);
+    throw error;
+  }
+};
+
+export const cancelBooking = async (bookingId, reason = '') => {
+  try {
+    const response = await API.put(`/api/user/bookings/${bookingId}`, {
+      action: 'cancel',
+      reason
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error canceling booking:', error);
+    throw error;
+  }
+};
+
+export const getBookingDetails = async (bookingId) => {
+  try {
+    const response = await API.get(`/api/user/bookings/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching booking details:', error);
+    throw error;
+  }
+};
+
 export default API; 

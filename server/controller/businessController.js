@@ -79,8 +79,14 @@ const getBusinessReservations = async (req, res) => {
 
 const updateReservationStatus = async (req, res) => {
   const { id } = req.params;
-  const { payment_status } = req.body;
+  const { status, payment_status } = req.body;
   const user_id = req.user.id;
+
+  // Validate status values (now includes completed)
+  const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+  if (status && !validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status. Must be pending, confirmed, or cancelled.' });
+  }
 
   try {
     const business_id = await _getBusinessIdForUser(req.supabase, user_id); // Pass req.supabase
@@ -88,7 +94,7 @@ const updateReservationStatus = async (req, res) => {
     // First verify the reservation belongs to the business
     const { data: reservationToUpdate, error: reservationFetchError } = await req.supabase // Use req.supabase
       .from('reservations')
-      .select('id, business_id')
+      .select('id, business_id, status, customer_name, date, time')
       .eq('id', id)
       .single();
 
@@ -96,9 +102,19 @@ const updateReservationStatus = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to update this reservation.' });
     }
 
+    // Build update object dynamically based on what's provided
+    const updateData = {};
+  if (status) updateData.status = status;
+    if (payment_status) updateData.payment_status = payment_status;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No valid fields provided for update.' });
+    }
+
+    // Update the reservation
     const { data, error } = await req.supabase // Use req.supabase
       .from('reservations')
-      .update({ payment_status })
+      .update(updateData)
       .eq('id', id)
       .select();
 
@@ -106,8 +122,22 @@ const updateReservationStatus = async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.status(200).json({ message: 'Reservation status updated successfully', reservation: data[0] });
+    // Log the action for audit trail
+    console.log(`Reservation ${id} updated by business owner ${user_id}:`, {
+      previousStatus: reservationToUpdate.status,
+      newStatus: status,
+      customerName: reservationToUpdate.customer_name,
+      date: reservationToUpdate.date,
+      time: reservationToUpdate.time
+    });
+
+    res.status(200).json({ 
+      message: 'Reservation status updated successfully', 
+      reservation: data[0],
+      action: status === 'confirmed' ? 'accepted' : status === 'cancelled' ? 'declined' : status === 'completed' ? 'completed' : 'updated'
+    });
   } catch (error) {
+    console.error('Error updating reservation status:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -227,10 +257,156 @@ const updateBusiness = async (req, res) => {
   }
 };
 
+// Helper function to accept a reservation
+const acceptReservation = async (req, res) => {
+  const { id } = req.params;
+  const user_id = req.user.id;
+
+  try {
+    const business_id = await _getBusinessIdForUser(req.supabase, user_id);
+
+    // Get the reservation details first
+    const { data: reservation, error: fetchError } = await req.supabase
+      .from('reservations')
+      .select('*, users!reservations_client_id_fkey(full_name, email)')
+      .eq('id', id)
+      .eq('business_id', business_id)
+      .single();
+
+    if (fetchError || !reservation) {
+      return res.status(404).json({ error: 'Reservation not found or access denied.' });
+    }
+
+    if (reservation.status === 'confirmed') {
+      return res.status(400).json({ error: 'Reservation is already confirmed.' });
+    }
+
+    // Update status to confirmed
+    const { data, error } = await req.supabase
+      .from('reservations')
+      .update({ status: 'confirmed', updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.log(`Reservation ${id} ACCEPTED by business owner ${user_id} for customer: ${reservation.users?.full_name}`);
+
+    res.status(200).json({ 
+      message: 'Reservation accepted successfully', 
+      reservation: data[0],
+      customer: reservation.users
+    });
+  } catch (error) {
+    console.error('Error accepting reservation:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Helper function to decline a reservation
+const declineReservation = async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body; // Optional decline reason
+  const user_id = req.user.id;
+
+  try {
+    const business_id = await _getBusinessIdForUser(req.supabase, user_id);
+
+    // Get the reservation details first
+    const { data: reservation, error: fetchError } = await req.supabase
+      .from('reservations')
+      .select('*, users!reservations_client_id_fkey(full_name, email)')
+      .eq('id', id)
+      .eq('business_id', business_id)
+      .single();
+
+    if (fetchError || !reservation) {
+      return res.status(404).json({ error: 'Reservation not found or access denied.' });
+    }
+
+    if (reservation.status === 'cancelled') {
+      return res.status(400).json({ error: 'Reservation is already cancelled.' });
+    }
+
+    // Update status to cancelled with optional reason
+    const updateData = { 
+      status: 'cancelled', 
+      updated_at: new Date().toISOString()
+    };
+    if (reason) {
+      updateData.decline_reason = reason;
+    }
+
+    const { data, error } = await req.supabase
+      .from('reservations')
+      .update(updateData)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.log(`Reservation ${id} DECLINED by business owner ${user_id} for customer: ${reservation.users?.full_name}${reason ? ` (Reason: ${reason})` : ''}`);
+
+    res.status(200).json({ 
+      message: 'Reservation declined successfully', 
+      reservation: data[0],
+      customer: reservation.users
+    });
+  } catch (error) {
+    console.error('Error declining reservation:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get reservation statistics for business dashboard
+const getReservationStats = async (req, res) => {
+  const user_id = req.user.id;
+
+  try {
+    const business_id = await _getBusinessIdForUser(req.supabase, user_id);
+
+    // Get all reservations for stats calculation
+    const { data: reservations, error } = await req.supabase
+      .from('reservations')
+      .select('status, date, created_at')
+      .eq('business_id', business_id);
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    const stats = {
+      total: reservations.length,
+      pending: reservations.filter(r => r.status === 'pending').length,
+      confirmed: reservations.filter(r => r.status === 'confirmed').length,
+      cancelled: reservations.filter(r => r.status === 'cancelled').length,
+      today: reservations.filter(r => r.date === today).length,
+      thisMonth: reservations.filter(r => r.date && r.date.startsWith(thisMonth)).length,
+      recentPending: reservations.filter(r => r.status === 'pending').slice(0, 5)
+    };
+
+    res.status(200).json({ stats });
+  } catch (error) {
+    console.error('Error getting reservation stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = { 
   registerBusiness,
   getBusinessReservations,
   updateReservationStatus,
+  acceptReservation,
+  declineReservation,
+  getReservationStats,
   getBusinessSettings,
   updateBusinessSettings,
   getUserBusiness,

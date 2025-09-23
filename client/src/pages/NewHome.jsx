@@ -1,14 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import API from '../utils/api';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import API, { acceptReservation, declineReservation } from '../utils/api';
 import BusinessDetailModal from '../components/BusinessDetailModal';
 import BookingModal from '../components/BookingModal';
 import BusinessCalendar from '../components/BusinessCalendar';
 import ReservationCard from '../components/ReservationCard';
+import UserProfile from '../components/UserProfile';
+import BookingDetailsModal from '../components/BookingDetailsModal';
+import SimpleBookingDetailsModal from '../components/SimpleBookingDetailsModal';
+import RescheduleBookingModal from '../components/RescheduleBookingModal';
+import CancelBookingModal from '../components/CancelBookingModal';
 import { ThemeToggle } from '../contexts/ThemeContext';
 import AnimatedLayout from '../components/AnimatedLayout';
 import ModernSidebar from '../components/Sidebar';
 import { motion, AnimatePresence } from 'framer-motion';
+import { authAPI } from '../api/auth';
 
 function Home() {
   const [user, setUser] = useState(null);
@@ -26,6 +32,13 @@ function Home() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showBusinessDetailModal, setShowBusinessDetailModal] = useState(false);
   const [showBusinessEditModal, setShowBusinessEditModal] = useState(false);
+  
+  // Booking management modals
+  const [showBookingDetailsModal, setShowBookingDetailsModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     type: '',
@@ -35,11 +48,19 @@ function Home() {
   });
 
   const navigate = useNavigate();
+  const location = useLocation();
   const businessesPerPage = 12;
 
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  useEffect(() => {
+    // Check if current path is /profile and set active section accordingly
+    if (location.pathname === '/profile') {
+      setActiveSection('profile');
+    }
+  }, [location]);
 
   useEffect(() => {
     applyFilters();
@@ -181,20 +202,138 @@ function Home() {
     }
   };
 
-  const handleReservationStatusUpdate = async (reservationId, newStatus) => {
+  // Booking management handlers
+  const handleShowBookingDetails = (booking) => {
+    console.log('Opening booking details for:', booking);
+    console.log('Booking ID:', booking?.id);
+    setSelectedBooking(booking);
+    setShowBookingDetailsModal(true);
+  };
+
+  const handleShowReschedule = (booking) => {
+    setSelectedBooking(booking);
+    setShowBookingDetailsModal(false); // Close details modal
+    setShowRescheduleModal(true); // Open reschedule modal
+  };
+
+  const handleShowCancel = (booking) => {
+    setSelectedBooking(booking);
+    setShowCancelModal(true);
+  };
+
+  const handleBookingUpdated = (updatedBooking) => {
+    setUserBookings(prev => {
+      const currentBookings = Array.isArray(prev) ? prev : [];
+      return currentBookings.map(booking => 
+        booking.id === updatedBooking.id ? updatedBooking : booking
+      );
+    });
+    
+    // Close modals
+    setShowRescheduleModal(false);
+    setShowCancelModal(false);
+    setShowBookingDetailsModal(false);
+    setSelectedBooking(null);
+  };
+
+  const closeBookingModals = () => {
+    setShowBookingDetailsModal(false);
+    setShowRescheduleModal(false);
+    setShowCancelModal(false);
+    setSelectedBooking(null);
+  };
+
+  const handleReservationStatusUpdate = async (reservationId, newStatus, reservationDetails = {}) => {
+    // Add confirmation for decline actions
+    if (newStatus === 'cancelled') {
+      const customerName = reservationDetails.customer_name || 'this customer';
+      const confirmDecline = window.confirm(
+        `Are you sure you want to decline the reservation for ${customerName}?\n\nThis action will notify the customer that their reservation has been declined.`
+      );
+      
+      if (!confirmDecline) {
+        return; // User cancelled the action
+      }
+    }
+
     try {
-      await API.put(`/api/business/reservations/${reservationId}`, { payment_status: newStatus });
+      let response;
+      let actionMessage = '';
+
+      // Use specific endpoints for accept/decline for better tracking
+      if (newStatus === 'confirmed') {
+        response = await acceptReservation(reservationId);
+        actionMessage = `✅ Reservation confirmed for ${reservationDetails.customer_name || 'customer'}!`;
+      } else if (newStatus === 'cancelled') {
+        response = await declineReservation(reservationId);
+        actionMessage = `❌ Reservation declined for ${reservationDetails.customer_name || 'customer'}!`;
+      } else {
+        // Fallback to generic status update
+        response = await API.put(`/api/business/reservations/${reservationId}`, { status: newStatus });
+        actionMessage = `⏳ Reservation status updated to ${newStatus}!`;
+      }
+      
+      // Update the local state with the returned data
       setBusinessReservations(prev => {
         const currentReservations = Array.isArray(prev) ? prev : [];
         return currentReservations.map(res => 
-          res.id === reservationId ? { ...res, payment_status: newStatus } : res
+          res.id === reservationId 
+            ? { ...res, status: newStatus, updated_at: new Date().toISOString() } 
+            : res
         );
       });
-      alert('Reservation status updated!');
+      
+      // Show success notification
+      showToastNotification(actionMessage, 'success');
+      
+      // Log the action for debugging
+      console.log(`Reservation ${reservationId} ${newStatus} successfully:`, {
+        reservationId,
+        newStatus,
+        customer: reservationDetails.customer_name,
+        timestamp: new Date().toISOString()
+      });
+      
     } catch (err) {
       console.error('Error updating reservation:', err);
-      alert('Failed to update reservation status');
+      
+      // Show detailed error message
+      const errorMessage = err.response?.data?.error || 'Failed to update reservation status. Please try again.';
+      showToastNotification(errorMessage, 'error');
     }
+  };
+
+  // Helper function to show toast notifications
+  const showToastNotification = (message, type = 'success') => {
+    const toast = document.createElement('div');
+    const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+    toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-x-full max-w-sm`;
+    toast.innerHTML = `
+      <div class="flex items-center space-x-2">
+        <span>${message}</span>
+        <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+          ✕
+        </button>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+      toast.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      if (document.body.contains(toast)) {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+          if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+          }
+        }, 300);
+      }
+    }, 5000);
   };
 
   const handleLogout = async () => {
@@ -301,6 +440,9 @@ function Home() {
                     key="bookings"
                     userBookings={userBookings}
                     setActiveSection={setActiveSection}
+                    onShowBookingDetails={handleShowBookingDetails}
+                    onShowReschedule={handleShowReschedule}
+                    onShowCancel={handleShowCancel}
                   />
                 )}
 
@@ -308,11 +450,8 @@ function Home() {
                   <BusinessSection 
                     key="business"
                     userBusiness={userBusiness}
-                    businessView={businessView}
-                    setBusinessView={setBusinessView}
                     businessReservations={businessReservations}
                     handleReservationStatusUpdate={handleReservationStatusUpdate}
-                    setShowBusinessEditModal={setShowBusinessEditModal}
                   />
                 )}
 
@@ -364,6 +503,28 @@ function Home() {
             onSave={handleBusinessUpdate}
           />
         )}
+
+        {/* Booking Management Modals */}
+        <SimpleBookingDetailsModal
+          isOpen={showBookingDetailsModal}
+          onClose={closeBookingModals}
+          booking={selectedBooking}
+          onReschedule={handleShowReschedule}
+        />
+
+        <RescheduleBookingModal
+          isOpen={showRescheduleModal}
+          onClose={closeBookingModals}
+          booking={selectedBooking}
+          onBookingUpdated={handleBookingUpdated}
+        />
+
+        <CancelBookingModal
+          isOpen={showCancelModal}
+          onClose={closeBookingModals}
+          booking={selectedBooking}
+          onBookingUpdated={handleBookingUpdated}
+        />
       </div>
     </AnimatedLayout>
   );
@@ -560,7 +721,13 @@ const DiscoverSection = ({
 );
 
 // Bookings Section Component
-const BookingsSection = ({ userBookings, setActiveSection }) => {
+const BookingsSection = ({ 
+  userBookings, 
+  setActiveSection, 
+  onShowBookingDetails, 
+  onShowReschedule, 
+  onShowCancel 
+}) => {
   const [sortBy, setSortBy] = useState('date'); // 'date', 'status', 'business'
   const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'confirmed', 'pending', 'completed', 'cancelled'
   const [searchTerm, setSearchTerm] = useState('');
@@ -819,7 +986,12 @@ const BookingsSection = ({ userBookings, setActiveSection }) => {
                     }}
                     layout
                   >
-                    <BookingCard booking={booking} />
+                    <BookingCard 
+                      booking={booking} 
+                      onShowDetails={onShowBookingDetails}
+                      onShowReschedule={onShowReschedule}
+                      onShowCancel={onShowCancel}
+                    />
                   </motion.div>
                 ))
               )}
@@ -831,40 +1003,587 @@ const BookingsSection = ({ userBookings, setActiveSection }) => {
   );
 };
 
-// Business Section Component (placeholder)
+// Business Section Component with detailed business information
 const BusinessSection = ({ 
-  userBusiness, businessView, setBusinessView, 
-  businessReservations, handleReservationStatusUpdate, setShowBusinessEditModal 
-}) => (
-  <motion.div
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -20 }}
-    transition={{ duration: 0.3 }}
-    className="space-y-6"
-  >
-    <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-      My Business Management
-    </h2>
-    {/* Add business management content here */}
-  </motion.div>
-);
+  userBusiness, 
+  businessReservations = [], 
+  handleReservationStatusUpdate 
+}) => {
+  const [activeTab, setActiveTab] = useState('overview');
 
-// Profile Section Component (placeholder)
-const ProfileSection = ({ user, userBusiness, setActiveSection }) => (
-  <motion.div
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -20 }}
-    transition={{ duration: 0.3 }}
-    className="space-y-6"
-  >
-    <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-      Profile & Settings
-    </h2>
-    {/* Add profile content here */}
-  </motion.div>
-);
+  // Calculate analytics
+  const analytics = React.useMemo(() => {
+    // Ensure businessReservations is always an array
+    const reservations = Array.isArray(businessReservations) ? businessReservations : [];
+    
+    const now = new Date();
+    const today = new Date().toDateString();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+
+    const todayReservations = reservations.filter(r => 
+      r.date && new Date(r.date).toDateString() === today
+    ).length;
+
+    const monthlyReservations = reservations.filter(r => {
+      if (!r.date) return false;
+      const reservationDate = new Date(r.date);
+      return reservationDate.getMonth() === thisMonth && reservationDate.getFullYear() === thisYear;
+    }).length;
+
+    const totalRevenue = reservations
+      .filter(r => r.status === 'confirmed')
+      .reduce((sum, r) => sum + (r.price || 0), 0);
+
+    const pendingReservations = reservations.filter(r => r.status === 'pending').length;
+
+    return {
+      todayReservations,
+      monthlyReservations,
+      totalReservations: reservations.length,
+      pendingReservations,
+      totalRevenue,
+      averageRating: '4.8'
+    };
+  }, [businessReservations]);
+
+  const navigationItems = [
+    { id: 'overview', label: 'Overview', icon: '📊', description: 'Dashboard & Analytics' },
+    { 
+      id: 'reservations', 
+      label: 'Reservations', 
+      icon: '📅', 
+      description: `Manage Bookings${analytics.pendingReservations > 0 ? ` (${analytics.pendingReservations} pending)` : ''}`,
+      badge: analytics.pendingReservations || null
+    },
+    { id: 'details', label: 'Business Details', icon: '🏢', description: 'Edit Information' },
+  ];
+
+  // Ensure we have a safe array for rendering
+  const safeReservations = Array.isArray(businessReservations) ? businessReservations : [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          My Business Management
+        </h2>
+      </div>
+
+      {/* Business Header Card */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700"
+      >
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold">
+            {userBusiness?.name?.charAt(0) || 'B'}
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              {userBusiness?.name || 'My Business'}
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 capitalize">
+              {userBusiness?.type?.replace('_', ' ') || 'Business'} • {userBusiness?.location || 'No location set'}
+            </p>
+            <div className="flex items-center mt-2 space-x-4">
+              <span className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                📞 {userBusiness?.phone || 'No phone'}
+              </span>
+              <span className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                ✉️ {userBusiness?.email || 'No email'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Pending Reservations - Most Important */}
+          <div className={`p-4 rounded-xl ${
+            analytics.pendingReservations > 0 
+              ? 'bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900 dark:to-orange-800 ring-2 ring-orange-200 dark:ring-orange-700' 
+              : 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-sm font-medium ${
+                  analytics.pendingReservations > 0 
+                    ? 'text-orange-600 dark:text-orange-300' 
+                    : 'text-gray-600 dark:text-gray-300'
+                }`}>
+                  Pending
+                </p>
+                <p className={`text-2xl font-bold ${
+                  analytics.pendingReservations > 0 
+                    ? 'text-orange-700 dark:text-orange-200' 
+                    : 'text-gray-700 dark:text-gray-200'
+                }`}>
+                  {analytics.pendingReservations}
+                </p>
+                {analytics.pendingReservations > 0 && (
+                  <p className="text-xs text-orange-500 dark:text-orange-400 font-medium">
+                    Needs action!
+                  </p>
+                )}
+              </div>
+              <div className={`text-2xl ${
+                analytics.pendingReservations > 0 
+                  ? 'text-orange-500' 
+                  : 'text-gray-500'
+              }`}>
+                ⏳
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-4 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-600 dark:text-blue-300 text-sm font-medium">Today</p>
+                <p className="text-2xl font-bold text-blue-700 dark:text-blue-200">{analytics.todayReservations}</p>
+              </div>
+              <div className="text-blue-500 text-2xl">📅</div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-4 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-600 dark:text-green-300 text-sm font-medium">This Month</p>
+                <p className="text-2xl font-bold text-green-700 dark:text-green-200">{analytics.monthlyReservations}</p>
+              </div>
+              <div className="text-green-500 text-2xl">📊</div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 p-4 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-600 dark:text-purple-300 text-sm font-medium">Revenue</p>
+                <p className="text-2xl font-bold text-purple-700 dark:text-purple-200">${analytics.totalRevenue}</p>
+              </div>
+              <div className="text-purple-500 text-2xl">💰</div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800 p-4 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-yellow-600 dark:text-yellow-300 text-sm font-medium">Rating</p>
+                <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-200">{analytics.averageRating}⭐</p>
+              </div>
+              <div className="text-yellow-500 text-2xl">⭐</div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Navigation Tabs */}
+      <div className="flex space-x-2 bg-gray-100 dark:bg-gray-800 p-2 rounded-xl">
+        {navigationItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-lg transition-all duration-200 relative ${
+              activeTab === item.id
+                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+          >
+            <span className="text-lg">{item.icon}</span>
+            <span className="font-medium">{item.label}</span>
+            {item.badge > 0 && (
+              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                {item.badge}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <AnimatePresence mode="wait">
+        {activeTab === 'overview' && (
+          <motion.div
+            key="overview"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+          >
+            {/* Recent Reservations */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Reservations</h4>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {safeReservations.filter(r => r.status === 'pending').length} pending
+                </span>
+              </div>
+              <div className="space-y-3">
+                {safeReservations.slice(0, 5).map((reservation, index) => (
+                  <div key={reservation.id || index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {reservation.customer_name?.charAt(0) || 'U'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">{reservation.customer_name || 'Unknown Customer'}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {reservation.date ? new Date(reservation.date).toLocaleDateString() : 'No date'} at {reservation.time || 'No time'}
+                        </p>
+                        {reservation.notes && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs truncate">
+                            {reservation.notes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        reservation.status === 'confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
+                        reservation.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
+                        'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                      }`}>
+                        {reservation.status}
+                      </span>
+                      {reservation.status === 'pending' && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleReservationStatusUpdate(reservation.id, 'confirmed', reservation)}
+                            className="px-3 py-1 bg-green-500 text-white text-xs rounded-md hover:bg-green-600 transition-colors shadow-md hover:shadow-lg"
+                            title="Confirm Reservation"
+                          >
+                            ✓ Confirm
+                          </button>
+                          <button
+                            onClick={() => handleReservationStatusUpdate(reservation.id, 'cancelled', reservation)}
+                            className="px-3 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 transition-colors shadow-md hover:shadow-lg"
+                            title="Decline Reservation"
+                          >
+                            ✗ Decline
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {safeReservations.length === 0 && (
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 text-4xl mb-3">📅</div>
+                    <p className="text-gray-500 dark:text-gray-400">No reservations yet</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">Your reservations will appear here</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'reservations' && (
+          <motion.div
+            key="reservations"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+          >
+            {/* Filter Bar */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xl font-semibold text-gray-900 dark:text-white">All Reservations</h4>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2 text-sm">
+                    <span className="flex items-center">
+                      <div className="w-3 h-3 bg-yellow-400 rounded-full mr-1"></div>
+                      Pending: {safeReservations.filter(r => r.status === 'pending').length}
+                    </span>
+                    <span className="flex items-center">
+                      <div className="w-3 h-3 bg-green-400 rounded-full mr-1"></div>
+                      Confirmed: {safeReservations.filter(r => r.status === 'confirmed').length}
+                    </span>
+                    <span className="flex items-center">
+                      <div className="w-3 h-3 bg-red-400 rounded-full mr-1"></div>
+                      Cancelled: {safeReservations.filter(r => r.status === 'cancelled').length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Reservations List */}
+            <div className="space-y-4">
+              {safeReservations.map((reservation, index) => (
+                <motion.div 
+                  key={reservation.id || index} 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden"
+                >
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                          {reservation.customer_name?.charAt(0) || 'U'}
+                        </div>
+                        <div>
+                          <h5 className="text-lg font-semibold text-gray-900 dark:text-white">{reservation.customer_name || 'Unknown Customer'}</h5>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                            <span className="flex items-center">
+                              📅 {reservation.date ? new Date(reservation.date).toLocaleDateString() : 'No date'}
+                            </span>
+                            <span className="flex items-center">
+                              🕐 {reservation.time || 'No time'}
+                            </span>
+                            {reservation.phone && (
+                              <span className="flex items-center">
+                                📞 {reservation.phone}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <span className={`px-4 py-2 rounded-full text-sm font-medium ${
+                          reservation.status === 'confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
+                          reservation.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
+                          'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                        }`}>
+                          {reservation.status ? (reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)) : 'Unknown'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {reservation.notes && (
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="font-medium">Notes:</span> {reservation.notes}
+                        </p>
+                      </div>
+                    )}
+
+                    {reservation.services && (
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Services:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {reservation.services.split(',').map((service, idx) => (
+                            <span key={idx} className="px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 text-xs rounded-md">
+                              {service.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-600">
+                      <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                        {reservation.price && (
+                          <span className="font-medium text-gray-700 dark:text-gray-300">
+                            💰 ${reservation.price}
+                          </span>
+                        )}
+                        <span>
+                          📍 Created {new Date(reservation.created_at || Date.now()).toLocaleDateString()}
+                        </span>
+                      </div>
+                      
+                      <div className="flex space-x-3">
+                        {reservation.status === 'pending' && (
+                          <>
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleReservationStatusUpdate(reservation.id, 'confirmed', reservation)}
+                              className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-md hover:shadow-lg"
+                            >
+                              <span>✓</span>
+                              <span>Confirm</span>
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleReservationStatusUpdate(reservation.id, 'cancelled', reservation)}
+                              className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md hover:shadow-lg"
+                            >
+                              <span>✗</span>
+                              <span>Decline</span>
+                            </motion.button>
+                          </>
+                        )}
+                        
+                        {reservation.status === 'confirmed' && (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleReservationStatusUpdate(reservation.id, 'cancelled', reservation)}
+                            className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors shadow-md hover:shadow-lg"
+                          >
+                            <span>↩</span>
+                            <span>Cancel</span>
+                          </motion.button>
+                        )}
+
+                        {reservation.customer_phone && (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => window.open(`tel:${reservation.customer_phone}`)}
+                            className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md hover:shadow-lg"
+                          >
+                            <span>📞</span>
+                            <span>Call</span>
+                          </motion.button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+              
+              {safeReservations.length === 0 && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12 text-center border border-gray-100 dark:border-gray-700"
+                >
+                  <div className="text-gray-400 text-6xl mb-4">📅</div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No reservations yet</h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    When customers make reservations, they'll appear here for you to manage.
+                  </p>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'details' && (
+          <motion.div
+            key="details"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700"
+          >
+            <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Business Details</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Name</label>
+                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  {userBusiness?.name || 'Not set'}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Type</label>
+                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg capitalize">
+                  {userBusiness?.type?.replace('_', ' ') || 'Not set'}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
+                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  {userBusiness?.phone || 'Not set'}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  {userBusiness?.email || 'Not set'}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location</label>
+                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  {userBusiness?.location || 'Not set'}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg min-h-[100px]">
+                  {userBusiness?.description || 'No description available'}
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                Edit Business Details
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+// Profile Section Component
+const ProfileSection = ({ user, userBusiness, setActiveSection }) => {
+  const [userData, setUserData] = useState(user);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleProfileUpdate = async () => {
+    setLoading(true);
+    try {
+      const updatedUserData = await authAPI.getMe();
+      setUserData(updatedUserData);
+      setError(null);
+    } catch (err) {
+      setError('Failed to refresh profile data. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        Profile & Settings
+      </h2>
+      
+      {loading && (
+        <div className="flex justify-center py-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+      
+      {error && (
+        <div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
+          {error}
+          <button 
+            onClick={handleProfileUpdate}
+            className="ml-4 text-sm underline hover:no-underline"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+      
+      {userData && (
+        <UserProfile 
+          user={userData} 
+          onProfileUpdate={handleProfileUpdate} 
+        />
+      )}
+    </motion.div>
+  );
+};
 
 // BusinessCard component
 const BusinessCard = ({ business, onSelect, onBookNow }) => {
@@ -947,7 +1666,7 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
 };
 
 // BookingCard component for displaying user bookings
-const BookingCard = ({ booking }) => {
+const BookingCard = ({ booking, onShowDetails, onShowReschedule, onShowCancel }) => {
   const getStatusConfig = (status) => {
     switch (status) {
       case 'confirmed': 
@@ -1103,6 +1822,7 @@ const BookingCard = ({ booking }) => {
           {booking.status === 'confirmed' && (
             <>
               <motion.button 
+                onClick={() => onShowReschedule && onShowReschedule(booking)}
                 className="flex-1 px-2 py-1.5 text-xs font-medium bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center justify-center space-x-1"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -1112,6 +1832,7 @@ const BookingCard = ({ booking }) => {
               </motion.button>
               
               <motion.button 
+                onClick={() => onShowCancel && onShowCancel(booking)}
                 className="flex-1 px-2 py-1.5 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center space-x-1"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -1123,6 +1844,7 @@ const BookingCard = ({ booking }) => {
           )}
           
           <motion.button 
+            onClick={() => onShowDetails && onShowDetails(booking)}
             className={`${booking.status === 'confirmed' ? 'w-full mt-1' : 'flex-1'} px-2 py-1.5 text-xs font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center space-x-1`}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

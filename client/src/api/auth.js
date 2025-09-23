@@ -72,4 +72,54 @@ export const authAPI = {
     
     return data;
   },
+
+  // Update user profile
+  updateProfile: async (userData) => {
+    console.log('Updating profile with data:', userData);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(userData),
+      });
+
+      console.log('Update profile response status:', response.status);
+      const data = await response.json();
+      console.log('Update profile response data:', data);
+      
+      if (!response.ok) {
+        console.error('Error updating profile:', data.error || 'Failed to update profile');
+        throw new Error(data.error || 'Failed to update profile');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Exception in updateProfile API call:', error);
+      throw error;
+    }
+  },
+
+  // Upload profile picture
+  uploadProfilePicture: async (imageFile) => {
+    const formData = new FormData();
+    formData.append('profile_picture', imageFile);
+
+    const response = await fetch(`${API_BASE_URL}/auth/profile-picture`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to upload profile picture');
+    }
+    
+    return data;
+  }
 };

@@ -103,7 +103,7 @@ const getMe = async (req, res) => {
     console.log('Controller: Attempting to fetch user from public.users for ID:', userId);
     const { data: userData, error } = await req.supabase // Use req.supabase
       .from('users')
-      .select('id, full_name, role')
+      .select('id, full_name, role, profile_picture_url')
       .eq('id', userId)
       .single();
 
@@ -118,9 +118,120 @@ const getMe = async (req, res) => {
       email: req.user.email,
       full_name: userData.full_name,
       role: userData.role,
+      profile_picture_url: userData.profile_picture_url,
     });
   } catch (error) {
     console.error('Controller: Unexpected error in getMe:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Update user profile
+const updateProfile = async (req, res) => {
+  console.log('updateProfile called with body:', req.body);
+  
+  if (!req.user || !req.user.id) {
+    console.error('User not authenticated:', req.user);
+    return res.status(400).json({ message: 'User information not available.' });
+  }
+
+  const userId = req.user.id;
+  const { full_name } = req.body;
+  
+  console.log(`Attempting to update user ${userId} with full_name: ${full_name}`);
+  
+  if (!full_name) {
+    console.error('Missing full_name in request body');
+    return res.status(400).json({ error: 'Full name is required' });
+  }
+  
+  try {
+    console.log('Updating user in Supabase using admin rights (bypassing RLS)...');
+    // Use the server's admin client (supabase) instead of req.supabase to bypass RLS
+    const { data, error } = await supabase
+      .from('users')
+      .update({ 
+        full_name
+      })
+      .eq('id', userId)
+      .select();
+
+    if (error) {
+      console.error('Supabase error when updating profile:', error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    if (!data || data.length === 0) {
+      console.error('No data returned from update operation');
+      return res.status(404).json({ error: 'User not found or update failed' });
+    }
+
+    console.log('Profile updated successfully:', data[0]);
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      user: data[0]
+    });
+  } catch (error) {
+    console.error('Exception in updateProfile:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Upload profile picture
+const uploadProfilePicture = async (req, res) => {
+  if (!req.user || !req.user.id) {
+    return res.status(400).json({ message: 'User information not available.' });
+  }
+
+  const userId = req.user.id;
+  
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const file = req.file;
+    const fileExt = file.originalname.split('.').pop();
+    const fileName = `${userId}-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`; // No subfolder needed
+
+    // Upload to Supabase Storage using the 'profile images' bucket
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('profile images')
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype,
+        cacheControl: '3600'
+      });
+
+    if (uploadError) {
+      return res.status(400).json({ error: uploadError.message });
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('profile images')
+      .getPublicUrl(filePath);
+
+    const publicUrl = publicUrlData.publicUrl;
+
+    // Update user profile with the new picture URL using admin rights (bypassing RLS)
+    const { data, error } = await supabase
+      .from('users')
+      .update({ 
+        profile_picture_url: publicUrl
+      })
+      .eq('id', userId)
+      .select();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(200).json({
+      message: 'Profile picture updated successfully',
+      profile_picture_url: publicUrl
+    });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
@@ -129,5 +240,7 @@ module.exports = {
   register,
   login,
   logout,
-  getMe
+  getMe,
+  updateProfile,
+  uploadProfilePicture
 }; 

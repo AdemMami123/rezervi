@@ -7,12 +7,19 @@ const businessRoutes = require('./routes/businessRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const userRoutes = require('./routes/userRoutes');
 
+// Cookie parser should be early in the middleware chain
+app.use(cookieParser());
+
 // Custom CORS middleware to ensure correct headers for credentials
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Log cookies on all requests for debugging
+  console.log('Cookies received:', req.cookies);
+  
   next();
 });
 
@@ -22,7 +29,6 @@ app.options('*', (req, res) => {
 });
 
 app.use(express.json());
-app.use(cookieParser());
 
 app.use('/auth', authRoutes);
 app.use('/api/business', businessRoutes);
