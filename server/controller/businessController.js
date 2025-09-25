@@ -235,7 +235,7 @@ const getUserBusiness = async (req, res) => {
 
 const updateBusiness = async (req, res) => {
   const user_id = req.user.id;
-  const { name, type, location, latitude, longitude, phone, description } = req.body;
+  const { name, type, location, latitude, longitude, phone, description, business_hours } = req.body;
 
   console.log('updateBusiness: Request received for user:', user_id);
   console.log('updateBusiness: Request body:', req.body);
@@ -261,6 +261,12 @@ const updateBusiness = async (req, res) => {
       updateData.latitude = latitude;
       updateData.longitude = longitude;
       console.log('updateBusiness: Including coordinates in update');
+    }
+
+    // Handle business hours if provided
+    if (business_hours) {
+      updateData.business_hours = business_hours;
+      console.log('updateBusiness: Including business hours in update');
     }
 
     console.log('updateBusiness: Update data:', updateData);

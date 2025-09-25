@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import API, { acceptReservation, declineReservation } from '../utils/api';
 import BusinessDetailModal from '../components/BusinessDetailModal';
@@ -14,6 +14,8 @@ import { ThemeToggle } from '../contexts/ThemeContext';
 import AnimatedLayout from '../components/AnimatedLayout';
 import ModernSidebar from '../components/Sidebar';
 import LeafletMapPicker from '../components/LeafletMapPicker';
+import WeeklyAvailability from '../components/WeeklyAvailability';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI } from '../api/auth';
 
@@ -1019,7 +1021,8 @@ const BusinessSection = ({
     location: '',
     description: '',
     latitude: '',
-    longitude: ''
+    longitude: '',
+    business_hours: null
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -1034,7 +1037,8 @@ const BusinessSection = ({
         location: userBusiness.location || '',
         description: userBusiness.description || '',
         latitude: userBusiness.latitude || '',
-        longitude: userBusiness.longitude || ''
+        longitude: userBusiness.longitude || '',
+        business_hours: userBusiness.business_hours || null
       });
     }
   }, [userBusiness]);
@@ -1075,12 +1079,18 @@ const BusinessSection = ({
     setEditFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleBusinessHoursChange = useCallback((businessHours) => {
+    console.log('Business hours changed:', businessHours);
+    setEditFormData(prev => ({ ...prev, business_hours: businessHours }));
+  }, []);
+
   const handleLocationSelect = (locationData) => {
+    console.log('Location selected:', locationData);
     setEditFormData(prev => ({
       ...prev,
       latitude: locationData.lat,
       longitude: locationData.lng,
-      location: locationData.address || prev.location
+      location: locationData.address || prev.location // Update location with the address from geocoding
     }));
   };
 
@@ -1617,6 +1627,14 @@ const BusinessSection = ({
                 </motion.div>
               )}
             </div>
+            
+            {/* Business Hours Overview */}
+            <ErrorBoundary>
+              <WeeklyAvailability 
+                businessHours={userBusiness?.business_hours}
+                isEditing={false}
+              />
+            </ErrorBoundary>
           </motion.div>
         )}
 
@@ -1633,12 +1651,20 @@ const BusinessSection = ({
                 Business Details
               </h4>
               {!isEditingDetails ? (
-                <button 
-                  onClick={handleEditToggle}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                >
-                  ✏️ Edit Business Details
-                </button>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={handleEditToggle}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                  >
+                    ✏️ Edit Business Details
+                  </button>
+                  <button 
+                    onClick={handleEditToggle}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                  >
+                    🕒 Manage Hours
+                  </button>
+                </div>
               ) : (
                 <div className="flex gap-2">
                   <button 
@@ -1704,11 +1730,20 @@ const BusinessSection = ({
                 </div>
                 {userBusiness?.latitude && userBusiness?.longitude && (
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Location</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Map Location</label>
                     <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        📍 Coordinates: {parseFloat(userBusiness.latitude).toFixed(6)}, {parseFloat(userBusiness.longitude).toFixed(6)}
-                      </p>
+                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        <span className="mr-2">�️</span>
+                        <span>Business location has been set on the map</span>
+                      </div>
+                      <details className="cursor-pointer">
+                        <summary className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                          Show coordinates
+                        </summary>
+                        <div className="mt-2 text-xs font-mono text-gray-500 dark:text-gray-400">
+                          Lat: {parseFloat(userBusiness.latitude).toFixed(6)}, Lng: {parseFloat(userBusiness.longitude).toFixed(6)}
+                        </div>
+                      </details>
                     </div>
                   </div>
                 )}
@@ -1769,9 +1804,12 @@ const BusinessSection = ({
                       value={editFormData.location}
                       onChange={(e) => handleInputChange('location', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      placeholder="Enter business location"
+                      placeholder="Enter business location or select from map below"
                       required
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      💡 Tip: Click on the map below to automatically fill this field with the address
+                    </p>
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1790,7 +1828,7 @@ const BusinessSection = ({
                 {/* Map Picker Section */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Business Location on Map
+                    Select Location on Map
                   </label>
                   <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                     <LeafletMapPicker
@@ -1803,7 +1841,7 @@ const BusinessSection = ({
                     />
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Click on the map to set your business location (optional - existing location will be preserved if not changed)
+                    🎯 Click anywhere on the map to set your business location. This will automatically update the location field above with the address.
                   </p>
                 </div>
 
@@ -1811,7 +1849,7 @@ const BusinessSection = ({
                 {editFormData.latitude && editFormData.longitude && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Selected Coordinates
+                      Map Coordinates (Technical Details)
                     </label>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
@@ -1823,8 +1861,20 @@ const BusinessSection = ({
                         <div className="font-mono text-sm">{parseFloat(editFormData.longitude).toFixed(6)}</div>
                       </div>
                     </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      ℹ️ These coordinates are automatically set when you click on the map
+                    </p>
                   </div>
                 )}
+                
+                {/* Weekly Business Hours */}
+                <ErrorBoundary>
+                  <WeeklyAvailability 
+                    businessHours={editFormData.business_hours}
+                    onHoursChange={handleBusinessHoursChange}
+                    isEditing={true}
+                  />
+                </ErrorBoundary>
               </div>
             )}
           </motion.div>
