@@ -15,6 +15,7 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     'http://localhost:3000',
     'https://rezervi-d750.onrender.com',
+    'https://rezervi-nine.vercel.app', // Your Vercel URL - update this once you get it
     process.env.CLIENT_URL
   ].filter(Boolean);
   
