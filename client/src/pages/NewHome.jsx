@@ -14,6 +14,7 @@ import { ThemeToggle } from '../contexts/ThemeContext';
 import AnimatedLayout from '../components/AnimatedLayout';
 import ModernSidebar from '../components/Sidebar';
 import LeafletMapPicker from '../components/LeafletMapPicker';
+import BusinessMapModal from '../components/BusinessMapModal';
 import WeeklyAvailability from '../components/WeeklyAvailability';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,6 +42,10 @@ function Home() {
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  
+  // Map modal state
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
@@ -151,6 +156,24 @@ function Home() {
 
     setFilteredBusinesses(filtered);
     setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  // Get user's current location
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error('Error getting user location:', error);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      );
+    }
   };
 
   const handleBusinessSelect = (business) => {
@@ -435,6 +458,8 @@ function Home() {
                     handleBookNow={handleBookNow}
                     navigate={navigate}
                     loading={loading}
+                    setShowMapModal={setShowMapModal}
+                    getCurrentLocation={getCurrentLocation}
                   />
                 )}
 
@@ -528,6 +553,14 @@ function Home() {
           booking={selectedBooking}
           onBookingUpdated={handleBookingUpdated}
         />
+
+        <BusinessMapModal
+          isOpen={showMapModal}
+          onClose={() => setShowMapModal(false)}
+          businesses={filteredBusinesses}
+          onBusinessSelect={handleBusinessSelect}
+          userLocation={userLocation}
+        />
       </div>
     </AnimatedLayout>
   );
@@ -537,7 +570,8 @@ function Home() {
 const DiscoverSection = ({ 
   searchTerm, setSearchTerm, filters, setFilters, businessTypes, 
   filteredBusinesses, currentBusinesses, totalPages, currentPage, setCurrentPage,
-  handleBusinessSelect, handleBookNow, navigate, loading 
+  handleBusinessSelect, handleBookNow, navigate, loading,
+  setShowMapModal, getCurrentLocation
 }) => (
   <motion.div
     initial={{ opacity: 0, x: 20 }}
@@ -609,7 +643,10 @@ const DiscoverSection = ({
         </motion.p>
         <div className="flex gap-2">
           <button
-            onClick={() => navigate('/discover')}
+            onClick={() => {
+              setShowMapModal(true);
+              getCurrentLocation(); // Get user location when opening map
+            }}
             className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900 flex items-center gap-2"
           >
             <span>🗺️</span>
