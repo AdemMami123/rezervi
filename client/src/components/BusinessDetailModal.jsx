@@ -1,5 +1,16 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix for default markers in React-Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
 
 const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
   if (!business) return null;
@@ -147,16 +158,33 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
             </div>
           </div>
 
-          {/* Map placeholder */}
+          {/* Interactive Map */}
           {business.latitude && business.longitude && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2 dark:text-white">Location on Map</h3>
-              <div className="bg-gray-200 h-48 rounded-lg flex items-center justify-center dark:bg-gray-700">
-                <p className="text-gray-500 dark:text-gray-400 text-center">
-                  Map showing {business.name} location
-                  <br />
-                  <small>Lat: {business.latitude}, Lng: {business.longitude}</small>
-                </p>
+              <div className="h-64 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+                <MapContainer
+                  center={[business.latitude, business.longitude]}
+                  zoom={15}
+                  scrollWheelZoom={false}
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[business.latitude, business.longitude]}>
+                    <Popup>
+                      <div className="text-center">
+                        <strong>{business.name}</strong><br />
+                        <span className="text-sm text-gray-600">{business.location}</span><br />
+                        <small className="text-xs text-gray-500">
+                          Lat: {business.latitude}, Lng: {business.longitude}
+                        </small>
+                      </div>
+                    </Popup>
+                  </Marker>
+                </MapContainer>
               </div>
             </div>
           )}

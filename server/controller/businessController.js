@@ -3,15 +3,25 @@
 // Helper function to get business ID for the authenticated user
 // This function now takes the supabase client instance as an argument
 const _getBusinessIdForUser = async (supabaseClient, user_id) => {
+  console.log('_getBusinessIdForUser: Looking for business with user_id:', user_id);
+  
   const { data, error } = await supabaseClient
     .from('businesses')
     .select('id')
     .eq('user_id', user_id)
     .single();
 
-  if (error || !data) {
-    throw new Error('Business not found for this user.');
+  if (error) {
+    console.log('_getBusinessIdForUser: Database error:', error);
+    throw new Error(`Business lookup failed: ${error.message}`);
   }
+  
+  if (!data) {
+    console.log('_getBusinessIdForUser: No business found for user');
+    throw new Error('Business not found for this user. Please register your business first.');
+  }
+  
+  console.log('_getBusinessIdForUser: Found business ID:', data.id);
   return data.id;
 };
 
@@ -227,32 +237,50 @@ const updateBusiness = async (req, res) => {
   const user_id = req.user.id;
   const { name, type, location, latitude, longitude, phone, description } = req.body;
 
+  console.log('updateBusiness: Request received for user:', user_id);
+  console.log('updateBusiness: Request body:', req.body);
+
   try {
     // First verify that the user owns a business
+    console.log('updateBusiness: Getting business ID for user:', user_id);
     const business_id = await _getBusinessIdForUser(req.supabase, user_id);
+    console.log('updateBusiness: Found business ID:', business_id);
+
+    // Prepare update data - only include coordinates if they are provided
+    const updateData = {
+      name,
+      type,
+      location,
+      phone,
+      description,
+      updated_at: new Date().toISOString()
+    };
+
+    // Only update coordinates if they are provided (preserve existing if not changed)
+    if (latitude && longitude) {
+      updateData.latitude = latitude;
+      updateData.longitude = longitude;
+      console.log('updateBusiness: Including coordinates in update');
+    }
+
+    console.log('updateBusiness: Update data:', updateData);
 
     const { data, error } = await req.supabase
       .from('businesses')
-      .update({
-        name,
-        type,
-        location,
-        latitude,
-        longitude,
-        phone,
-        description,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', business_id)
       .select()
       .single();
 
     if (error) {
+      console.log('updateBusiness: Supabase error:', error);
       return res.status(400).json({ error: error.message });
     }
 
+    console.log('updateBusiness: Success, updated business:', data);
     res.status(200).json({ message: 'Business updated successfully', business: data });
   } catch (error) {
+    console.log('updateBusiness: Caught exception:', error);
     res.status(500).json({ error: error.message });
   }
 };

@@ -13,6 +13,7 @@ import CancelBookingModal from '../components/CancelBookingModal';
 import { ThemeToggle } from '../contexts/ThemeContext';
 import AnimatedLayout from '../components/AnimatedLayout';
 import ModernSidebar from '../components/Sidebar';
+import LeafletMapPicker from '../components/LeafletMapPicker';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI } from '../api/auth';
 
@@ -1010,6 +1011,159 @@ const BusinessSection = ({
   handleReservationStatusUpdate 
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    type: '',
+    phone: '',
+    location: '',
+    description: '',
+    latitude: '',
+    longitude: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  // Initialize form data when userBusiness changes
+  useEffect(() => {
+    if (userBusiness) {
+      setEditFormData({
+        name: userBusiness.name || '',
+        type: userBusiness.type || '',
+        phone: userBusiness.phone || '',
+        location: userBusiness.location || '',
+        description: userBusiness.description || '',
+        latitude: userBusiness.latitude || '',
+        longitude: userBusiness.longitude || ''
+      });
+    }
+  }, [userBusiness]);
+
+  const businessTypes = [
+    { value: 'barbershop', label: 'Barbershop' },
+    { value: 'beauty_salon', label: 'Beauty Salon' },
+    { value: 'restaurant', label: 'Restaurant' },
+    { value: 'cafe', label: 'Café' },
+    { value: 'football_field', label: 'Football Field' },
+    { value: 'tennis_court', label: 'Tennis Court' },
+    { value: 'gym', label: 'Gym' },
+    { value: 'car_wash', label: 'Car Wash' },
+    { value: 'spa', label: 'Spa & Wellness' },
+    { value: 'dentist', label: 'Dentist' },
+    { value: 'doctor', label: 'Doctor' },
+    { value: 'other', label: 'Other' }
+  ];
+
+  const handleEditToggle = () => {
+    setIsEditingDetails(!isEditingDetails);
+    setMessage('');
+    if (!isEditingDetails) {
+      // Reset form data when entering edit mode
+      setEditFormData({
+        name: userBusiness?.name || '',
+        type: userBusiness?.type || '',
+        phone: userBusiness?.phone || '',
+        location: userBusiness?.location || '',
+        description: userBusiness?.description || '',
+        latitude: userBusiness?.latitude || '',
+        longitude: userBusiness?.longitude || ''
+      });
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setEditFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleLocationSelect = (locationData) => {
+    setEditFormData(prev => ({
+      ...prev,
+      latitude: locationData.lat,
+      longitude: locationData.lng,
+      location: locationData.address || prev.location
+    }));
+  };
+
+  const handleSave = async () => {
+    if (!userBusiness) {
+      setMessage('No business found to update. Please register your business first.');
+      return;
+    }
+
+    // Basic validation
+    if (!editFormData.name?.trim()) {
+      setMessage('Business name is required.');
+      return;
+    }
+
+    if (!editFormData.type) {
+      setMessage('Business type is required.');
+      return;
+    }
+
+    if (!editFormData.location?.trim()) {
+      setMessage('Location is required.');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+    
+    console.log('handleSave: Attempting to save business data:', editFormData);
+    console.log('handleSave: Current userBusiness:', userBusiness);
+    
+    try {
+      const response = await API.put('/api/business/update', editFormData);
+      console.log('handleSave: Success response:', response);
+      setMessage('Business details updated successfully!');
+      setIsEditingDetails(false);
+      
+      // Refresh the page or update the business data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error('handleSave: Error occurred:', error);
+      console.error('handleSave: Error response:', error.response);
+      
+      let errorMessage = 'Failed to update business details';
+      
+      if (error.response) {
+        // Server responded with error status
+        if (error.response.status === 401) {
+          errorMessage = 'Authentication failed. Please log in again.';
+        } else if (error.response.status === 404) {
+          errorMessage = 'Business not found. Please register your business first.';
+        } else if (error.response.data?.error) {
+          errorMessage = error.response.data.error;
+        }
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage = 'Cannot connect to server. Please check if the server is running.';
+      } else {
+        errorMessage = error.message;
+      }
+      
+      console.error('handleSave: Final error message:', errorMessage);
+      setMessage(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditFormData({
+      name: userBusiness?.name || '',
+      type: userBusiness?.type || '',
+      phone: userBusiness?.phone || '',
+      location: userBusiness?.location || '',
+      description: userBusiness?.description || '',
+      latitude: userBusiness?.latitude || '',
+      longitude: userBusiness?.longitude || ''
+    });
+    setIsEditingDetails(false);
+    setMessage('');
+  };
 
   // Calculate analytics
   const analytics = React.useMemo(() => {
@@ -1474,50 +1628,205 @@ const BusinessSection = ({
             exit={{ opacity: 0, y: -20 }}
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700"
           >
-            <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Business Details</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Name</label>
-                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  {userBusiness?.name || 'Not set'}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Type</label>
-                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg capitalize">
-                  {userBusiness?.type?.replace('_', ' ') || 'Not set'}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
-                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  {userBusiness?.phone || 'Not set'}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  {userBusiness?.email || 'Not set'}
-                </p>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location</label>
-                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  {userBusiness?.location || 'Not set'}
-                </p>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
-                <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg min-h-[100px]">
-                  {userBusiness?.description || 'No description available'}
-                </p>
-              </div>
+            <div className="flex items-center justify-between mb-6">
+              <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Business Details
+              </h4>
+              {!isEditingDetails ? (
+                <button 
+                  onClick={handleEditToggle}
+                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                >
+                  ✏️ Edit Business Details
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {loading ? '⏳' : '💾'} {loading ? 'Saving...' : 'Save'}
+                  </button>
+                  <button 
+                    onClick={handleCancel}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    ❌ Cancel
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="mt-6 flex justify-end">
-              <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                Edit Business Details
-              </button>
-            </div>
+
+            {/* Message */}
+            {message && (
+              <div className={`mb-4 p-3 rounded-lg ${
+                message.includes('success') 
+                  ? 'bg-green-100 text-green-700 border border-green-200' 
+                  : 'bg-red-100 text-red-700 border border-red-200'
+              }`}>
+                {message}
+              </div>
+            )}
+
+            {!isEditingDetails ? (
+              /* View Mode */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Name</label>
+                  <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                    {userBusiness?.name || 'Not set'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Type</label>
+                  <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg capitalize">
+                    {userBusiness?.type?.replace('_', ' ') || 'Not set'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
+                  <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                    {userBusiness?.phone || 'Not set'}
+                  </p>
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location</label>
+                  <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                    {userBusiness?.location || 'Not set'}
+                  </p>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                  <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg min-h-[100px]">
+                    {userBusiness?.description || 'No description available'}
+                  </p>
+                </div>
+                {userBusiness?.latitude && userBusiness?.longitude && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Location</label>
+                    <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        📍 Coordinates: {parseFloat(userBusiness.latitude).toFixed(6)}, {parseFloat(userBusiness.longitude).toFixed(6)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Edit Mode */
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Business Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Enter business name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Business Type *
+                    </label>
+                    <select
+                      value={editFormData.type}
+                      onChange={(e) => handleInputChange('type', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    >
+                      <option value="">Select business type</option>
+                      {businessTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={editFormData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Location *
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Enter business location"
+                      required
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={editFormData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Describe your business..."
+                    />
+                  </div>
+                </div>
+
+                {/* Map Picker Section */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Business Location on Map
+                  </label>
+                  <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                    <LeafletMapPicker
+                      onLocationSelect={handleLocationSelect}
+                      initialLocation={
+                        editFormData.latitude && editFormData.longitude
+                          ? { lat: parseFloat(editFormData.latitude), lng: parseFloat(editFormData.longitude) }
+                          : null
+                      }
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Click on the map to set your business location (optional - existing location will be preserved if not changed)
+                  </p>
+                </div>
+
+                {/* Coordinates Display */}
+                {editFormData.latitude && editFormData.longitude && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Selected Coordinates
+                    </label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Latitude:</span>
+                        <div className="font-mono text-sm">{parseFloat(editFormData.latitude).toFixed(6)}</div>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Longitude:</span>
+                        <div className="font-mono text-sm">{parseFloat(editFormData.longitude).toFixed(6)}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
