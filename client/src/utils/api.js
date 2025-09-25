@@ -1,7 +1,23 @@
 import axios from 'axios';
 
+// Dynamic base URL for development and production
+const getBaseURL = () => {
+  // In production, use environment variable if set
+  if (process.env.REACT_APP_API_BASE_URL) {
+    return process.env.REACT_APP_API_BASE_URL;
+  }
+  
+  // In development, default to localhost
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:5000';
+  }
+  
+  // Fallback for production without env var (you'll need to deploy backend separately)
+  return 'https://your-backend-url.com'; // Replace with your actual backend URL
+};
+
 const API = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: getBaseURL(),
   withCredentials: true, // Crucial for sending cookies
 });
 

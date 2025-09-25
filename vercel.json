@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "name": "rezervi",
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/build",
+  "framework": "create-react-app",
+  "installCommand": "cd client && npm install",
+  "devCommand": "cd client && npm start",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

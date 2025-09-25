@@ -1,4 +1,20 @@
-const API_BASE_URL = 'http://localhost:5000';
+// Dynamic base URL for development and production
+const getAPIBaseURL = () => {
+  // In production, use environment variable if set
+  if (process.env.REACT_APP_API_BASE_URL) {
+    return process.env.REACT_APP_API_BASE_URL;
+  }
+  
+  // In development, default to localhost
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:5000';
+  }
+  
+  // Fallback for production without env var
+  return 'https://your-backend-url.com'; // Replace with your actual backend URL
+};
+
+const API_BASE_URL = getAPIBaseURL();
 
 export const authAPI = {
   // Register new user

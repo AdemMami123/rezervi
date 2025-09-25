@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fi';
 import AnimatedLayout from '../components/AnimatedLayout';
 import axios from 'axios';
+import API from '../utils/api';
 
 function Register() {
   const [email, setEmail] = useState('');
@@ -45,7 +46,7 @@ function Register() {
     setIsLoading(true);
     
     try {
-      const response = await axios.post('http://localhost:5000/auth/register', {
+      const response = await API.post('/auth/register', {
         email,
         password,
       });
