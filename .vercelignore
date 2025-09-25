@@ -1,0 +1,8 @@
+server/
+*.log
+.env.local
+.env
+node_modules/
+*.md
+supabase/
+APPLY_MIGRATION.sql
