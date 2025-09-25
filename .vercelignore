@@ -1,5 +1,0 @@
-server/
-supabase/
-APPLY_MIGRATION.sql
-*.md
-.env.local

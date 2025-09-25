@@ -1,8 +1,8 @@
 {
-  "version": 2,
-  "name": "rezervi",
-  "framework": null,
-  "buildCommand": "cd client && npm ci && npm run build",
-  "outputDirectory": "client/build",
-  "installCommand": null
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
