@@ -61,18 +61,19 @@ const login = async (req, res) => {
     }
 
     // Set HttpOnly cookie with the access token
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('sb-access-token', data.session.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       maxAge: data.session.expires_in * 1000,
-      sameSite: 'Lax',
+      sameSite: isProduction ? 'None' : 'Lax',
       path: '/'
     });
     res.cookie('sb-refresh-token', data.session.refresh_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       maxAge: data.session.expires_in * 1000,
-      sameSite: 'Lax',
+      sameSite: isProduction ? 'None' : 'Lax',
       path: '/'
     });
 
