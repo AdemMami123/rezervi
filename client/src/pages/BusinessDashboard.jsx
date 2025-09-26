@@ -151,72 +151,72 @@ function BusinessDashboard() {
   console.log('BusinessDashboard: Rendering main content. Business:', business, 'Reservations:', reservations, 'Settings:', settings);
   
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-8 text-center">Business Dashboard</h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-6 sm:mb-8 text-center">Business Dashboard</h1>
 
         {/* Business Info Section */}
-        <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">{business?.name || 'Your Business'}</h2>
-          <p className="text-gray-600">Type: {business?.type}</p>
-          <p className="text-gray-600">Location: {business?.location}</p>
+        <div className="bg-white shadow-md rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">{business?.name || 'Your Business'}</h2>
+          <p className="text-gray-600 text-sm sm:text-base">Type: {business?.type}</p>
+          <p className="text-gray-600 text-sm sm:text-base">Location: {business?.location}</p>
           {/* Add more business details here if needed */}
         </div>
 
         {/* Usage Tracking Section */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <UsageTracker compact={true} />
         </div>
 
         {/* Quick Actions Section */}
-        <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white shadow-md rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <button
               onClick={() => navigate('/commission-analytics')}
-              className="flex items-center justify-center p-4 bg-purple-100 hover:bg-purple-200 rounded-lg transition-colors"
+              className="flex items-center justify-center p-3 sm:p-4 bg-purple-100 hover:bg-purple-200 rounded-lg transition-colors"
             >
               <div className="text-center">
-                <div className="text-2xl mb-2">📊</div>
-                <div className="text-sm font-semibold text-purple-700">Commission Analytics</div>
+                <div className="text-xl sm:text-2xl mb-1 sm:mb-2">📊</div>
+                <div className="text-xs sm:text-sm font-semibold text-purple-700">Commission Analytics</div>
               </div>
             </button>
             <button
               onClick={() => navigate('/subscription')}
-              className="flex items-center justify-center p-4 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors"
+              className="flex items-center justify-center p-3 sm:p-4 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors"
             >
               <div className="text-center">
-                <div className="text-2xl mb-2">💎</div>
-                <div className="text-sm font-semibold text-blue-700">Subscription Plans</div>
+                <div className="text-xl sm:text-2xl mb-1 sm:mb-2">💎</div>
+                <div className="text-xs sm:text-sm font-semibold text-blue-700">Subscription Plans</div>
               </div>
             </button>
             <button
               onClick={() => setActiveSection('reservations')}
-              className="flex items-center justify-center p-4 bg-green-100 hover:bg-green-200 rounded-lg transition-colors"
+              className="flex items-center justify-center p-3 sm:p-4 bg-green-100 hover:bg-green-200 rounded-lg transition-colors"
             >
               <div className="text-center">
-                <div className="text-2xl mb-2">📅</div>
-                <div className="text-sm font-semibold text-green-700">View Reservations</div>
+                <div className="text-xl sm:text-2xl mb-1 sm:mb-2">📅</div>
+                <div className="text-xs sm:text-sm font-semibold text-green-700">View Reservations</div>
               </div>
             </button>
             <button
               onClick={() => setActiveSection('settings')}
-              className="flex items-center justify-center p-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="flex items-center justify-center p-3 sm:p-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               <div className="text-center">
-                <div className="text-2xl mb-2">⚙️</div>
-                <div className="text-sm font-semibold text-gray-700">Business Settings</div>
+                <div className="text-xl sm:text-2xl mb-1 sm:mb-2">⚙️</div>
+                <div className="text-xs sm:text-sm font-semibold text-gray-700">Business Settings</div>
               </div>
             </button>
           </div>
         </div>
 
         {/* Business Settings Section */}
-        <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Business Settings</h2>
-          {settingsMessage && <p className="text-green-600 text-center mb-4 bg-green-100 p-3 rounded-md">{settingsMessage}</p>}
+        <div className="bg-white shadow-md rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Business Settings</h2>
+          {settingsMessage && <p className="text-green-600 text-center mb-4 bg-green-100 p-3 rounded-md text-sm sm:text-base">{settingsMessage}</p>}
           <form onSubmit={handleUpdateSettings}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
               <div>
                 <label htmlFor="slot_duration_minutes" className="block text-gray-700 text-sm font-semibold mb-2">Slot Duration (minutes):</label>
                 <input

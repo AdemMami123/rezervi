@@ -15,12 +15,6 @@ L.Icon.Default.mergeOptions({
 const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   
-  // Debug logging to see what data we have
-  console.log('BusinessDetailModal - business data:', business);
-  console.log('BusinessDetailModal - phone:', business?.phone);
-  console.log('BusinessDetailModal - instagram_url:', business?.instagram_url);
-  console.log('BusinessDetailModal - facebook_url:', business?.facebook_url);
-  
   if (!business) return null;
 
   const getBusinessIcon = (type) => {

@@ -64,8 +64,8 @@ const ProfilePage = () => {
 
   return (
     <AnimatedLayout>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8 text-center text-gray-800 dark:text-white">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-4xl">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center text-gray-800 dark:text-white">
           My Profile
         </h1>
         

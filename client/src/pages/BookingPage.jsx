@@ -167,34 +167,34 @@ const BookingPage = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <button
             onClick={() => navigate(-1)}
-            className="text-blue-600 hover:text-blue-800 mb-4 flex items-center"
+            className="text-blue-600 hover:text-blue-800 mb-4 flex items-center text-sm sm:text-base"
           >
             ← Back to search
           </button>
           
           {business && (
-            <div className="flex items-start space-x-4">
+            <div className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900">{business.name}</h1>
-                <p className="text-gray-600 mt-1 flex items-center">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{business.name}</h1>
+                <p className="text-gray-600 mt-1 flex items-center text-sm sm:text-base">
                   <span className="mr-2">📍</span>
                   {business.location}
                 </p>
-                <div className="flex items-center space-x-4 mt-3">
-                  <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3">
+                  <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium rounded-full">
                     {business.type?.replace('_', ' ')}
                   </span>
                   <div className="flex items-center">
                     <span className="text-yellow-400 mr-1">★</span>
-                    <span className="text-sm text-gray-600">4.2 (23 reviews)</span>
+                    <span className="text-xs sm:text-sm text-gray-600">4.2 (23 reviews)</span>
                   </div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-green-600">
+              <div className="text-left sm:text-right">
+                <div className="text-xl sm:text-2xl font-bold text-green-600">
                   {finalPrice.toFixed(2)} TND
                 </div>
                 {paymentMethod === 'online' && (
@@ -209,10 +209,10 @@ const BookingPage = () => {
       </div>
 
       {/* Booking Form */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Book Your Appointment</h2>
+          <div className="p-4 sm:p-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Book Your Appointment</h2>
             
             {error && (
               <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -226,20 +226,20 @@ const BookingPage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Select Date
                 </label>
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-1 sm:gap-2">
                   {getNextSevenDays().map((day) => (
                     <button
                       key={day.dateString}
                       type="button"
                       onClick={() => setSelectedDate(day.dateString)}
-                      className={`p-3 text-center rounded-lg border ${
+                      className={`p-2 sm:p-3 text-center rounded-lg border text-xs sm:text-sm ${
                         selectedDate === day.dateString
                           ? 'bg-blue-600 text-white border-blue-600'
                           : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'
                       } ${day.isToday ? 'ring-2 ring-blue-200' : ''}`}
                     >
-                      <div className="text-xs font-medium">{day.dayName}</div>
-                      <div className="text-lg font-bold">{day.dayNumber}</div>
+                      <div className="font-medium">{day.dayName}</div>
+                      <div className="text-sm sm:text-lg font-bold">{day.dayNumber}</div>
                       {day.isToday && <div className="text-xs">Today</div>}
                     </button>
                   ))}
@@ -257,13 +257,13 @@ const BookingPage = () => {
                     <p className="text-sm">Please select a different date</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                     {availability.map((slot) => (
                       <button
                         key={slot.time}
                         type="button"
                         onClick={() => setSelectedTimeSlot(slot.time)}
-                        className={`p-3 text-center rounded-lg border ${
+                        className={`p-2 sm:p-3 text-center rounded-lg border text-xs sm:text-sm ${
                           selectedTimeSlot === slot.time
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'

@@ -53,12 +53,12 @@ function Login() {
         {/* Animated Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
           <div className="absolute inset-0 bg-black opacity-20"></div>
-          {/* Floating geometric shapes */}
+          {/* Floating geometric shapes - responsive positioning */}
           <motion.div
-            className="absolute top-20 left-20 w-32 h-32 bg-blue-500 opacity-10 rounded-full blur-xl"
+            className="absolute top-10 sm:top-20 left-4 sm:left-20 w-20 sm:w-32 h-20 sm:h-32 bg-blue-500 opacity-10 rounded-full blur-xl"
             animate={{
-              x: [0, 100, 0],
-              y: [0, -100, 0],
+              x: [0, 50, 0],
+              y: [0, -50, 0],
               scale: [1, 1.2, 1],
             }}
             transition={{
@@ -68,10 +68,10 @@ function Login() {
             }}
           />
           <motion.div
-            className="absolute top-40 right-32 w-24 h-24 bg-purple-500 opacity-10 rounded-full blur-xl"
+            className="absolute top-20 sm:top-40 right-4 sm:right-32 w-16 sm:w-24 h-16 sm:h-24 bg-purple-500 opacity-10 rounded-full blur-xl"
             animate={{
-              x: [0, -80, 0],
-              y: [0, 120, 0],
+              x: [0, -40, 0],
+              y: [0, 60, 0],
               scale: [1, 0.8, 1],
             }}
             transition={{
@@ -82,10 +82,10 @@ function Login() {
             }}
           />
           <motion.div
-            className="absolute bottom-20 left-1/3 w-40 h-40 bg-pink-500 opacity-10 rounded-full blur-xl"
+            className="absolute bottom-10 sm:bottom-20 left-1/4 sm:left-1/3 w-24 sm:w-40 h-24 sm:h-40 bg-pink-500 opacity-10 rounded-full blur-xl"
             animate={{
-              x: [0, 120, 0],
-              y: [0, -80, 0],
+              x: [0, 60, 0],
+              y: [0, -40, 0],
               scale: [1, 1.1, 1],
             }}
             transition={{
@@ -102,10 +102,10 @@ function Login() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative z-10 w-full max-w-md mx-4"
+          className="relative z-10 w-full max-w-md mx-4 px-4 sm:px-0"
         >
           <motion.div
-            className="bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-2xl"
+            className="bg-white/10 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-white/20 shadow-2xl"
             whileHover={{ scale: 1.01 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
@@ -128,8 +128,8 @@ function Login() {
               transition={{ delay: 0.3 }}
               className="text-center mb-8"
             >
-              <h2 className="text-3xl font-bold text-white mb-2">Welcome Back!</h2>
-              <p className="text-white/70">Sign in to your account to continue</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Welcome Back!</h2>
+              <p className="text-white/70 text-sm sm:text-base">Sign in to your account to continue</p>
             </motion.div>
 
             {/* Error Message */}

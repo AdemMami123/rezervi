@@ -69,12 +69,12 @@ function Register() {
         {/* Animated Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900">
           <div className="absolute inset-0 bg-black opacity-20"></div>
-          {/* Floating geometric shapes */}
+          {/* Floating geometric shapes - responsive positioning */}
           <motion.div
-            className="absolute top-32 left-16 w-28 h-28 bg-emerald-500 opacity-10 rounded-full blur-xl"
+            className="absolute top-16 sm:top-32 left-4 sm:left-16 w-20 sm:w-28 h-20 sm:h-28 bg-emerald-500 opacity-10 rounded-full blur-xl"
             animate={{
-              x: [0, 80, 0],
-              y: [0, -120, 0],
+              x: [0, 40, 0],
+              y: [0, -60, 0],
               scale: [1, 1.3, 1],
             }}
             transition={{
@@ -84,10 +84,10 @@ function Register() {
             }}
           />
           <motion.div
-            className="absolute top-20 right-20 w-36 h-36 bg-cyan-500 opacity-10 rounded-full blur-xl"
+            className="absolute top-10 sm:top-20 right-4 sm:right-20 w-24 sm:w-36 h-24 sm:h-36 bg-cyan-500 opacity-10 rounded-full blur-xl"
             animate={{
-              x: [0, -100, 0],
-              y: [0, 100, 0],
+              x: [0, -50, 0],
+              y: [0, 50, 0],
               scale: [1, 0.7, 1],
             }}
             transition={{
@@ -98,10 +98,10 @@ function Register() {
             }}
           />
           <motion.div
-            className="absolute bottom-32 left-1/4 w-32 h-32 bg-teal-500 opacity-10 rounded-full blur-xl"
+            className="absolute bottom-16 sm:bottom-32 left-1/4 w-20 sm:w-32 h-20 sm:h-32 bg-teal-500 opacity-10 rounded-full blur-xl"
             animate={{
-              x: [0, 140, 0],
-              y: [0, -60, 0],
+              x: [0, 70, 0],
+              y: [0, -30, 0],
               scale: [1, 1.1, 1],
             }}
             transition={{
@@ -118,10 +118,10 @@ function Register() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative z-10 w-full max-w-md mx-4"
+          className="relative z-10 w-full max-w-md mx-4 px-4 sm:px-0"
         >
           <motion.div
-            className="bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-2xl"
+            className="bg-white/10 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-white/20 shadow-2xl"
             whileHover={{ scale: 1.01 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
@@ -144,8 +144,8 @@ function Register() {
               transition={{ delay: 0.3 }}
               className="text-center mb-8"
             >
-              <h2 className="text-3xl font-bold text-white mb-2">Create Account</h2>
-              <p className="text-white/70">Join us and start your journey today</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Create Account</h2>
+              <p className="text-white/70 text-sm sm:text-base">Join us and start your journey today</p>
             </motion.div>
 
             {/* Success Message */}

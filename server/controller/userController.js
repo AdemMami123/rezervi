@@ -52,7 +52,15 @@ const updateUserBooking = async (req, res) => {
       .eq('id', id)
       .single();
 
-    if (fetchError || !reservation || reservation.client_id !== user_id) {
+    if (fetchError) {
+      console.error('Error fetching reservation:', fetchError);
+      if (fetchError.code === 'PGRST116') { // No rows found
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+      return res.status(500).json({ error: 'Failed to fetch booking' });
+    }
+
+    if (!reservation || reservation.client_id !== user_id) {
       return res.status(403).json({ error: 'Not authorized to update this reservation' });
     }
 
@@ -66,23 +74,26 @@ const updateUserBooking = async (req, res) => {
         }
         
         // Check if new slot is available
-        const { data: conflictingReservation } = await req.supabase
+        const { data: conflictingReservations, error: conflictError } = await req.supabase
           .from('reservations')
           .select('id')
           .eq('business_id', reservation.business_id)
           .eq('date', date)
           .eq('time', time)
-          .neq('id', id)
-          .single();
+          .neq('id', id);
 
-        if (conflictingReservation) {
+        if (conflictError) {
+          console.error('Error checking for conflicting reservations:', conflictError);
+          return res.status(500).json({ error: 'Failed to check availability' });
+        }
+
+        if (conflictingReservations && conflictingReservations.length > 0) {
           return res.status(400).json({ error: 'The selected time slot is not available' });
         }
 
         updateData = { 
           date,
-          time,
-          updated_at: new Date().toISOString()
+          time
         };
         message = 'Booking rescheduled successfully';
         break;
@@ -90,8 +101,7 @@ const updateUserBooking = async (req, res) => {
       case 'cancel':
         updateData = { 
           status: 'cancelled',
-          notes: reason ? `${reservation.notes ? reservation.notes + '. ' : ''}Cancelled: ${reason}` : reservation.notes,
-          updated_at: new Date().toISOString()
+          notes: reason ? `${reservation.notes ? reservation.notes + '. ' : ''}Cancelled: ${reason}` : reservation.notes
         };
         message = 'Booking cancelled successfully';
         break;
@@ -105,19 +115,28 @@ const updateUserBooking = async (req, res) => {
       .from('reservations')
       .update(updateData)
       .eq('id', id)
-      .select(`
-        *,
-        businesses!reservations_business_id_fkey(
-          id,
-          name,
-          type,
-          location
-        )
-      `);
+      .select('*');
 
     if (error) {
       console.error('Error updating reservation:', error);
       return res.status(500).json({ error: 'Failed to update reservation' });
+    }
+
+    if (!data || data.length === 0) {
+      console.error('No data returned from update operation');
+      return res.status(500).json({ error: 'Update operation failed' });
+    }
+
+    // Get business details separately for response
+    const { data: businessData, error: businessError } = await req.supabase
+      .from('businesses')
+      .select('id, name, type, location')
+      .eq('id', data[0].business_id)
+      .single();
+
+    if (businessError) {
+      console.error('Error fetching business details:', businessError);
+      // Still continue since the update was successful
     }
 
     // Transform the data to match frontend expectations
@@ -125,8 +144,8 @@ const updateUserBooking = async (req, res) => {
       ...data[0],
       booking_date: data[0].date,
       booking_time: data[0].time,
-      business_name: data[0].businesses?.name,
-      business_type: data[0].businesses?.type,
+      business_name: businessData?.name || reservation.business_name,
+      business_type: businessData?.type || reservation.business_type,
     };
 
     res.json({ 

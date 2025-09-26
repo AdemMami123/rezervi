@@ -587,36 +587,36 @@ const DiscoverSection = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
     >
-      <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+      <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
         Discover Amazing Businesses
       </h1>
-      <p className="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
+      <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg max-w-2xl mx-auto px-4 sm:px-0">
         Find and book the perfect service for your needs. From barbershops to restaurants, we've got you covered.
       </p>
     </motion.div>
 
     {/* Search and Filters */}
     <motion.div 
-      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700"
+      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100 dark:border-gray-700"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+      <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div className="flex-1">
           <input
             type="text"
             placeholder="🔍 Search businesses, services, or locations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-6 py-4 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-lg transition-all duration-200"
+            className="w-full px-4 sm:px-6 py-3 sm:py-4 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-base sm:text-lg transition-all duration-200"
           />
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <select
             value={filters.type}
             onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-            className="px-6 py-4 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white min-w-[180px] transition-all duration-200"
+            className="px-4 sm:px-6 py-3 sm:py-4 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white min-w-[180px] transition-all duration-200 text-sm sm:text-base"
           >
             {businessTypes.map(type => (
               <option key={type.value} value={type.value}>{type.label}</option>
@@ -627,14 +627,14 @@ const DiscoverSection = ({
             placeholder="📍 Location..."
             value={filters.location}
             onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
-            className="px-6 py-4 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 min-w-[200px] transition-all duration-200"
+            className="px-4 sm:px-6 py-3 sm:py-4 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 min-w-[200px] transition-all duration-200 text-sm sm:text-base"
           />
         </div>
       </div>
       
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
         <motion.p 
-          className="text-gray-600 dark:text-gray-300"
+          className="text-gray-600 dark:text-gray-300 text-sm sm:text-base"
           key={filteredBusinesses.length}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -647,7 +647,7 @@ const DiscoverSection = ({
               setShowMapModal(true);
               getCurrentLocation(); // Get user location when opening map
             }}
-            className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900 flex items-center gap-2"
+            className="px-3 sm:px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900 flex items-center gap-2 text-sm sm:text-base"
           >
             <span>🗺️</span>
             Map View
@@ -658,7 +658,7 @@ const DiscoverSection = ({
 
     {/* Business Grid */}
     <motion.div 
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8"
       initial="hidden"
       animate="visible"
       variants={{
@@ -1059,6 +1059,8 @@ const BusinessSection = ({
     description: '',
     latitude: '',
     longitude: '',
+    instagram_url: '',
+    facebook_url: '',
     business_hours: null
   });
   const [loading, setLoading] = useState(false);
@@ -1075,6 +1077,8 @@ const BusinessSection = ({
         description: userBusiness.description || '',
         latitude: userBusiness.latitude || '',
         longitude: userBusiness.longitude || '',
+        instagram_url: userBusiness.instagram_url || '',
+        facebook_url: userBusiness.facebook_url || '',
         business_hours: userBusiness.business_hours || null
       });
     }
@@ -1107,7 +1111,9 @@ const BusinessSection = ({
         location: userBusiness?.location || '',
         description: userBusiness?.description || '',
         latitude: userBusiness?.latitude || '',
-        longitude: userBusiness?.longitude || ''
+        longitude: userBusiness?.longitude || '',
+        instagram_url: userBusiness?.instagram_url || '',
+        facebook_url: userBusiness?.facebook_url || ''
       });
     }
   };
@@ -1765,6 +1771,43 @@ const BusinessSection = ({
                     {userBusiness?.description || 'No description available'}
                   </p>
                 </div>
+                
+                {/* Social Media URLs Display */}
+                {(userBusiness?.instagram_url || userBusiness?.facebook_url) && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Social Media</label>
+                    <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg space-y-2">
+                      {userBusiness?.instagram_url && (
+                        <div className="flex items-center">
+                          <span className="mr-2">📸</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Instagram:</span>
+                          <a 
+                            href={userBusiness.instagram_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-pink-600 dark:text-pink-400 hover:underline text-sm break-all"
+                          >
+                            {userBusiness.instagram_url}
+                          </a>
+                        </div>
+                      )}
+                      {userBusiness?.facebook_url && (
+                        <div className="flex items-center">
+                          <span className="mr-2">👥</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Facebook:</span>
+                          <a 
+                            href={userBusiness.facebook_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 dark:text-blue-400 hover:underline text-sm break-all"
+                          >
+                            {userBusiness.facebook_url}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {userBusiness?.latitude && userBusiness?.longitude && (
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Map Location</label>
@@ -1858,6 +1901,33 @@ const BusinessSection = ({
                       rows={4}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       placeholder="Describe your business..."
+                    />
+                  </div>
+                  
+                  {/* Social Media URLs */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Instagram URL (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={editFormData.instagram_url}
+                      onChange={(e) => handleInputChange('instagram_url', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="https://instagram.com/yourbusiness"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Facebook URL (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={editFormData.facebook_url}
+                      onChange={(e) => handleInputChange('facebook_url', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="https://facebook.com/yourbusiness"
                     />
                   </div>
                 </div>

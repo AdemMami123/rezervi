@@ -211,12 +211,52 @@ const MyBusiness = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="flex h-screen">
-        {/* Sidebar */}
+      <div className="flex flex-col lg:flex-row h-screen">
+        {/* Mobile Header */}
+        <div className="lg:hidden bg-white/80 dark:bg-gray-800/80 border-b border-gray-200/50 dark:border-gray-700/50 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">
+                {business?.name?.charAt(0).toUpperCase() || 'B'}
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-800 dark:text-white">
+                  {business?.name || 'My Business'}
+                </h1>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/')}
+              className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+          
+          {/* Mobile Tab Navigation */}
+          <div className="mt-4 flex overflow-x-auto space-x-2 pb-2">
+            {navigationItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex-shrink-0 flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  activeTab === item.id
+                    ? 'bg-blue-500 text-white shadow-lg'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                <span>{item.icon}</span>
+                <span className="whitespace-nowrap">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sidebar - Desktop */}
         <motion.div 
           initial={{ x: -300 }}
           animate={{ x: 0 }}
-          className="w-80 bg-white/80 backdrop-blur-xl dark:bg-gray-800/80 border-r border-gray-200/50 dark:border-gray-700/50 shadow-xl"
+          className="hidden lg:block w-80 bg-white/80 backdrop-blur-xl dark:bg-gray-800/80 border-r border-gray-200/50 dark:border-gray-700/50 shadow-xl"
         >
           {/* Business Header */}
           <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
@@ -306,28 +346,28 @@ const MyBusiness = () => {
             >
               {/* Overview Tab */}
               {activeTab === 'overview' && (
-                <div className="p-8">
-                  <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                <div className="p-4 sm:p-6 lg:p-8">
+                  <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                       Business Overview
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
                       Monitor your business performance and manage operations
                     </p>
                   </div>
 
                   {/* Stats Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
                     {statsCards.map((stat, index) => (
                       <motion.div
                         key={stat.title}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300"
+                        className="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300"
                       >
                         <div className="flex items-center justify-between mb-4">
-                          <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center text-white text-xl`}>
+                          <div className={`w-10 sm:w-12 h-10 sm:h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center text-white text-lg sm:text-xl`}>
                             {stat.icon}
                           </div>
                           <div className={`text-sm font-semibold px-2 py-1 rounded-full ${
@@ -357,7 +397,7 @@ const MyBusiness = () => {
 
               {/* Reservations Tab */}
               {activeTab === 'reservations' && (
-                <div className="p-8">
+                <div className="p-4 sm:p-6 lg:p-8">
                   <ReservationManagement 
                     reservations={reservations} 
                     onReservationUpdate={fetchBusinessData}
@@ -367,7 +407,7 @@ const MyBusiness = () => {
 
               {/* Calendar Tab */}
               {activeTab === 'calendar' && (
-                <div className="p-8">
+                <div className="p-4 sm:p-6 lg:p-8">
                   <BusinessCalendar 
                     reservations={reservations}
                     business={business}
@@ -378,7 +418,7 @@ const MyBusiness = () => {
 
               {/* Availability Tab */}
               {activeTab === 'availability' && (
-                <div className="p-8">
+                <div className="p-4 sm:p-6 lg:p-8">
                   <AvailabilityManager 
                     settings={settings}
                     onSettingsUpdate={fetchBusinessData}
@@ -388,7 +428,7 @@ const MyBusiness = () => {
 
               {/* Profile Tab */}
               {activeTab === 'profile' && (
-                <div className="p-8">
+                <div className="p-4 sm:p-6 lg:p-8">
                   <BusinessProfile 
                     business={business}
                     onBusinessUpdate={fetchBusinessData}
@@ -398,7 +438,7 @@ const MyBusiness = () => {
 
               {/* Settings Tab */}
               {activeTab === 'settings' && (
-                <div className="p-8">
+                <div className="p-4 sm:p-6 lg:p-8">
                   <BusinessSettings 
                     settings={settings}
                     onSettingsUpdate={fetchBusinessData}

@@ -188,16 +188,16 @@ const BusinessDiscovery = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Discover Businesses</h1>
-          <p className="text-gray-600 mt-2">Find and book appointments at local businesses</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Discover Businesses</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Find and book appointments at local businesses</p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-start sm:items-center justify-between">
             <div className="flex flex-wrap gap-4 items-center">
               {/* Business Type Filter */}
               <div>

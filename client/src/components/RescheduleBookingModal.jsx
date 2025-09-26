@@ -179,15 +179,15 @@ const RescheduleBookingModal = ({ isOpen, onClose, booking, onBookingUpdated }) 
                   <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
                     {availableSlots.map((slot) => (
                       <button
-                        key={slot}
-                        onClick={() => setSelectedTime(slot)}
+                        key={slot.time}
+                        onClick={() => setSelectedTime(slot.time)}
                         className={`p-2 text-sm rounded-lg border transition-colors ${
-                          selectedTime === slot
+                          selectedTime === slot.time
                             ? 'bg-blue-500 text-white border-blue-500'
                             : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                         }`}
                       >
-                        {slot}
+                        {slot.time}
                       </button>
                     ))}
                   </div>

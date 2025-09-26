@@ -166,13 +166,13 @@ function RegisterBusiness() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-100 p-4">
-      <div className="bg-white p-10 rounded-xl shadow-lg w-full max-w-5xl border border-gray-200">
-        <h2 className="text-3xl font-extrabold text-center text-gray-800 mb-8">Register Your Business</h2>
-        {error && <p className="text-red-600 text-center mb-6 bg-red-100 p-3 rounded-md">{error}</p>}
-        {message && <p className="text-green-600 text-center mb-6 bg-green-100 p-3 rounded-md">{message}</p>}
+      <div className="bg-white p-6 sm:p-8 lg:p-10 rounded-xl shadow-lg w-full max-w-5xl border border-gray-200">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-center text-gray-800 mb-6 sm:mb-8">Register Your Business</h2>
+        {error && <p className="text-red-600 text-center mb-6 bg-red-100 p-3 rounded-md text-sm sm:text-base">{error}</p>}
+        {message && <p className="text-green-600 text-center mb-6 bg-green-100 p-3 rounded-md text-sm sm:text-base">{message}</p>}
         
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Left Column */}
             <div>
               <div className="mb-5">
