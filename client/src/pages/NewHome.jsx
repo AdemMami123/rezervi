@@ -2003,7 +2003,7 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
 
   return (
     <motion.div 
-      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 dark:border-gray-700 h-full flex flex-col"
+      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 h-full flex flex-col overflow-hidden"
       whileHover={{ 
         scale: 1.02,
         y: -4,
@@ -2011,39 +2011,53 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
       }}
       whileTap={{ scale: 0.98 }}
     >
-      <div className="flex items-start mb-4">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl flex items-center justify-center text-2xl mr-4">
-          {getBusinessIcon(business.type)}
+      {/* Business Photo */}
+      {business.primary_photo && (
+        <div className="relative h-48 overflow-hidden">
+          <img
+            src={business.primary_photo}
+            alt={business.name}
+            className="w-full h-full object-cover"
+          />
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{business.name}</h3>
-          <p className="text-sm text-gray-600 capitalize dark:text-gray-300 mb-2">
-            {business.type.replace('_', ' ')}
-          </p>
-        </div>
-      </div>
+      )}
       
-      <p className="text-gray-600 text-sm mb-4 line-clamp-2 dark:text-gray-400 flex-grow">
-        {business.description || 'Professional service provider offering quality solutions for your needs.'}
-      </p>
-      
-      <div className="space-y-2 mb-6">
-        <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-          <span className="mr-2">📍</span>
-          {business.location}
-        </p>
-        {business.rating && (
-          <div className="flex items-center">
-            <span className="text-yellow-400 mr-1">⭐</span>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {business.rating}/5
-            </span>
-            <span className="text-xs text-gray-500 ml-2">({business.reviews || 0} reviews)</span>
+      <div className="p-6 flex flex-col flex-grow">
+        <div className="flex items-start mb-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl flex items-center justify-center text-2xl mr-4">
+            {getBusinessIcon(business.type)}
           </div>
-        )}
-      </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{business.name}</h3>
+            <p className="text-sm text-gray-600 capitalize dark:text-gray-300 mb-2">
+              {business.type.replace('_', ' ')}
+            </p>
+          </div>
+        </div>
+        
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2 dark:text-gray-400 flex-grow">
+          {business.description || 'Professional service provider offering quality solutions for your needs.'}
+        </p>
+        
+        <div className="space-y-2 mb-6">
+          <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+            <span className="mr-2">📍</span>
+            {business.location}
+          </p>
+          {business.rating && (
+            <div className="flex items-center">
+              <span className="text-yellow-400 mr-1">⭐</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {business.rating}/5
+              </span>
+              <span className="text-xs text-gray-500 ml-2">({business.reviews || 0} reviews)</span>
+            </div>
+          )}
+        </div>
 
-      <div className="flex gap-2 mt-auto">
+        <div className="flex gap-2 mt-auto">
         <button
           onClick={() => onSelect(business)}
           className="flex-1 px-4 py-3 text-blue-600 border border-blue-600 rounded-xl hover:bg-blue-50 transition-colors text-sm font-medium dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900"
@@ -2057,6 +2071,7 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
           Book Now
         </button>
       </div>
+    </div>
     </motion.div>
   );
 };

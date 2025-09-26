@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -22,6 +22,10 @@ const BusinessProfile = ({ business, onBusinessUpdate }) => {
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const [errors, setErrors] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [businessPhotos, setBusinessPhotos] = useState([]);
+  const [selectedPhotos, setSelectedPhotos] = useState([]);
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Initialize form data when business changes
   useEffect(() => {
@@ -33,10 +37,15 @@ const BusinessProfile = ({ business, onBusinessUpdate }) => {
         phone: business.phone || '',
         description: business.description || '',
         latitude: business.latitude || '',
-        longitude: business.longitude || ''
+        longitude: business.longitude || '',
+        instagram_url: business.instagram_url || '',
+        facebook_url: business.facebook_url || ''
       };
       setFormData(initialData);
       setOriginalData(initialData);
+      
+      // Fetch business photos
+      fetchBusinessPhotos();
     }
   }, [business]);
 
@@ -64,6 +73,99 @@ const BusinessProfile = ({ business, onBusinessUpdate }) => {
   const showNotification = (message, type = 'info') => {
     setNotification({ show: true, message, type });
     setTimeout(() => setNotification({ show: false, message: '', type: '' }), 4000);
+  };
+
+  // Fetch business photos
+  const fetchBusinessPhotos = async () => {
+    if (!business?.id) return;
+    
+    try {
+      const response = await API.get(`/api/business/${business.id}/photos`);
+      setBusinessPhotos(response.data.photos || []);
+    } catch (error) {
+      console.error('Error fetching business photos:', error);
+    }
+  };
+
+  // Handle photo selection
+  const handlePhotoSelect = (e) => {
+    const files = Array.from(e.target.files);
+    const maxFiles = 10;
+    
+    if (businessPhotos.length + files.length > maxFiles) {
+      showNotification(`You can only have up to ${maxFiles} photos total`, 'error');
+      return;
+    }
+
+    // Validate files
+    const validFiles = [];
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        showNotification('Only image files are allowed', 'error');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        showNotification('Each image must be smaller than 5MB', 'error');
+        return;
+      }
+      
+      validFiles.push(file);
+    }
+    
+    setSelectedPhotos(validFiles);
+  };
+
+  // Upload new photos
+  const uploadPhotos = async () => {
+    if (selectedPhotos.length === 0) return;
+    
+    setPhotoLoading(true);
+    try {
+      const formData = new FormData();
+      selectedPhotos.forEach((photo) => {
+        formData.append('business_photos', photo);
+      });
+
+      const response = await API.post('/api/business/photos', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      showNotification(`${response.data.photos.length} photo(s) uploaded successfully`, 'success');
+      setSelectedPhotos([]);
+      fileInputRef.current.value = '';
+      fetchBusinessPhotos(); // Refresh the photos list
+    } catch (error) {
+      showNotification(error.response?.data?.error || 'Failed to upload photos', 'error');
+    } finally {
+      setPhotoLoading(false);
+    }
+  };
+
+  // Delete a photo
+  const deletePhoto = async (photoId) => {
+    if (!window.confirm('Are you sure you want to delete this photo?')) return;
+    
+    try {
+      await API.delete(`/api/business/photos/${photoId}`);
+      showNotification('Photo deleted successfully', 'success');
+      fetchBusinessPhotos(); // Refresh the photos list
+    } catch (error) {
+      showNotification(error.response?.data?.error || 'Failed to delete photo', 'error');
+    }
+  };
+
+  // Set as primary photo
+  const setPrimaryPhoto = async (photoId) => {
+    try {
+      await API.put(`/api/business/photos/${photoId}`, { is_primary: true });
+      showNotification('Primary photo updated successfully', 'success');
+      fetchBusinessPhotos(); // Refresh the photos list
+    } catch (error) {
+      showNotification(error.response?.data?.error || 'Failed to update primary photo', 'error');
+    }
   };
 
   const validateForm = () => {
@@ -377,11 +479,49 @@ const BusinessProfile = ({ business, onBusinessUpdate }) => {
                 />
               </motion.div>
 
-              {/* Map Picker */}
+              {/* Instagram URL */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55 }}
+              >
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <span className="text-lg">📸</span>
+                  Instagram URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={formData.instagram_url || ''}
+                  onChange={(e) => handleInputChange('instagram_url', e.target.value)}
+                  className="w-full px-5 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="https://instagram.com/yourbusiness"
+                />
+              </motion.div>
+
+              {/* Facebook URL */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
+              >
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <span className="text-lg">👥</span>
+                  Facebook URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={formData.facebook_url || ''}
+                  onChange={(e) => handleInputChange('facebook_url', e.target.value)}
+                  className="w-full px-5 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="https://facebook.com/yourbusiness"
+                />
+              </motion.div>
+
+              {/* Map Picker */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.65 }}
                 className="lg:col-span-2"
               >
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
@@ -506,6 +646,51 @@ const BusinessProfile = ({ business, onBusinessUpdate }) => {
                     {business?.phone || 'Not specified'}
                   </div>
                 </motion.div>
+
+                {/* Social Media Links */}
+                {(business?.instagram_url || business?.facebook_url) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.45 }}
+                    className="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 p-6 rounded-2xl border border-pink-200 dark:border-pink-700"
+                  >
+                    <label className="block text-sm font-semibold text-pink-600 dark:text-pink-400 mb-3 flex items-center gap-2">
+                      <span className="text-lg">🔗</span>
+                      Social Media
+                    </label>
+                    <div className="space-y-3">
+                      {business?.instagram_url && (
+                        <a
+                          href={business.instagram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 text-gray-900 dark:text-white hover:text-pink-600 dark:hover:text-pink-400 transition-colors duration-200 p-2 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30"
+                        >
+                          <span className="text-2xl">📸</span>
+                          <div>
+                            <div className="font-medium">Instagram</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">View our photos</div>
+                          </div>
+                        </a>
+                      )}
+                      {business?.facebook_url && (
+                        <a
+                          href={business.facebook_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                        >
+                          <span className="text-2xl">👥</span>
+                          <div>
+                            <div className="font-medium">Facebook</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Like our page</div>
+                          </div>
+                        </a>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
               </div>
 
               {/* Description & Map */}
@@ -571,6 +756,170 @@ const BusinessProfile = ({ business, onBusinessUpdate }) => {
             </div>
           </div>
         )}
+      </motion.div>
+
+      {/* Business Photos Management Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-white/90 backdrop-blur-sm dark:bg-gray-800/90 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden mt-6"
+      >
+        <div className="p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
+                <span className="text-3xl">📸</span>
+                Business Photos
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                Showcase your business with high-quality photos (max 10)
+              </p>
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {businessPhotos.length}/10 photos
+            </div>
+          </div>
+
+          {/* Photo Upload Section */}
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="flex-1">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoSelect}
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={businessPhotos.length >= 10}
+                  className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                    businessPhotos.length >= 10
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white hover:shadow-lg'
+                  }`}
+                >
+                  <span>📎</span>
+                  Select Photos
+                </button>
+                <p className="text-xs text-gray-500 mt-2">
+                  Supported formats: JPG, PNG, GIF (max 5MB each)
+                </p>
+              </div>
+              
+              {selectedPhotos.length > 0 && (
+                <button
+                  onClick={uploadPhotos}
+                  disabled={photoLoading}
+                  className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
+                >
+                  {photoLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <span>⬆️</span>
+                      Upload {selectedPhotos.length} Photo{selectedPhotos.length > 1 ? 's' : ''}
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            
+            {/* Selected Photos Preview */}
+            {selectedPhotos.length > 0 && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-3">
+                  Selected Photos ({selectedPhotos.length})
+                </p>
+                <div className="flex gap-2 overflow-x-auto">
+                  {selectedPhotos.map((file, index) => (
+                    <div key={index} className="flex-shrink-0">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={`Selected ${index + 1}`}
+                        className="w-16 h-16 object-cover rounded-lg border border-blue-300"
+                      />
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 truncate w-16">
+                        {file.name}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Existing Photos Grid */}
+          {businessPhotos.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {businessPhotos.map((photo, index) => (
+                <motion.div
+                  key={photo.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="relative group"
+                >
+                  <div className="relative overflow-hidden rounded-xl border-2 border-gray-200 dark:border-gray-600 hover:border-blue-400 transition-all duration-200">
+                    <img
+                      src={photo.photo_url}
+                      alt={`Business photo ${index + 1}`}
+                      className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-200"
+                    />
+                    
+                    {/* Primary Photo Badge */}
+                    {photo.is_primary && (
+                      <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                        ⭐ Primary
+                      </div>
+                    )}
+                    
+                    {/* Photo Actions */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+                        {!photo.is_primary && (
+                          <button
+                            onClick={() => setPrimaryPhoto(photo.id)}
+                            className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg text-xs transition-colors"
+                            title="Set as primary"
+                          >
+                            ⭐
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deletePhoto(photo.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg text-xs transition-colors"
+                          title="Delete photo"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                    Photo {index + 1}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📸</div>
+              <h4 className="text-xl font-medium text-gray-600 dark:text-gray-400 mb-2">
+                No photos uploaded yet
+              </h4>
+              <p className="text-gray-500 dark:text-gray-500">
+                Add photos to showcase your business and attract more customers
+              </p>
+            </div>
+          )}
+        </div>
       </motion.div>
     </div>
   );

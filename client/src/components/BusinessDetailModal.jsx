@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -13,6 +13,14 @@ L.Icon.Default.mergeOptions({
 });
 
 const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  
+  // Debug logging to see what data we have
+  console.log('BusinessDetailModal - business data:', business);
+  console.log('BusinessDetailModal - phone:', business?.phone);
+  console.log('BusinessDetailModal - instagram_url:', business?.instagram_url);
+  console.log('BusinessDetailModal - facebook_url:', business?.facebook_url);
+  
   if (!business) return null;
 
   const getBusinessIcon = (type) => {
@@ -44,7 +52,7 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
         onClick={onClose}
       >
         <motion.div 
-          className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto dark:bg-gray-800"
+          className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto dark:bg-gray-800 shadow-2xl"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -68,101 +76,252 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
           </button>
         </div>
 
-        {/* Content */}
+        {/* Content - Multi-column Layout */}
         <div className="p-6">
-          {/* Location */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2 dark:text-white">Location</h3>
-            <p className="text-gray-600 flex items-center dark:text-gray-400">
-              <span className="mr-2">📍</span>
-              {business.location}
-            </p>
-          </div>
-
-          {/* Description */}
-          {business.description && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 dark:text-white">About</h3>
-              <p className="text-gray-600 dark:text-gray-400">{business.description}</p>
-            </div>
-          )}
-
-          {/* Rating */}
-          {business.rating && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 dark:text-white">Rating</h3>
-              <div className="flex items-center">
-                <span className="text-yellow-400 text-xl mr-2">⭐</span>
-                <span className="text-lg font-medium dark:text-white">{business.rating}/5</span>
-                <span className="text-gray-500 ml-2 dark:text-gray-400">
-                  ({business.review_count || 0} reviews)
-                </span>
+          {/* Business Photos Section - Full Width */}
+          {business.photos && business.photos.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Photos</h3>
+              <div className="space-y-4">
+                {/* Main Photo Display */}
+                <div className="relative">
+                  <img
+                    src={business.photos[selectedPhotoIndex]?.photo_url}
+                    alt={`${business.name} - Photo ${selectedPhotoIndex + 1}`}
+                    className="w-full h-72 object-cover rounded-xl shadow-lg"
+                  />
+                  {business.photos.length > 1 && (
+                    <>
+                      {/* Previous Button */}
+                      <button
+                        onClick={() => setSelectedPhotoIndex(
+                          selectedPhotoIndex === 0 ? business.photos.length - 1 : selectedPhotoIndex - 1
+                        )}
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all backdrop-blur-sm"
+                      >
+                        ‹
+                      </button>
+                      {/* Next Button */}
+                      <button
+                        onClick={() => setSelectedPhotoIndex(
+                          selectedPhotoIndex === business.photos.length - 1 ? 0 : selectedPhotoIndex + 1
+                        )}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all backdrop-blur-sm"
+                      >
+                        ›
+                      </button>
+                      {/* Photo Counter */}
+                      <div className="absolute bottom-4 right-4 bg-black bg-opacity-60 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+                        {selectedPhotoIndex + 1} / {business.photos.length}
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                {/* Photo Thumbnails */}
+                {business.photos.length > 1 && (
+                  <div className="flex gap-3 overflow-x-auto pb-2">
+                    {business.photos.map((photo, index) => (
+                      <button
+                        key={photo.id}
+                        onClick={() => setSelectedPhotoIndex(index)}
+                        className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-3 transition-all ${
+                          selectedPhotoIndex === index 
+                            ? 'border-blue-500 ring-2 ring-blue-200 shadow-lg' 
+                            : 'border-gray-300 hover:border-gray-400 hover:shadow-md'
+                        }`}
+                      >
+                        <img
+                          src={photo.photo_url}
+                          alt={`${business.name} - Thumbnail ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Operating Hours */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2 dark:text-white">Operating Hours</h3>
-            <div className="text-gray-600 dark:text-gray-400">
-              <p>Monday - Friday: 9:00 AM - 8:00 PM</p>
-              <p>Saturday: 9:00 AM - 6:00 PM</p>
-              <p>Sunday: 10:00 AM - 4:00 PM</p>
-            </div>
-          </div>
+          {/* Main Content - Multi-column Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
+            
+            {/* Column 1: Basic Info & Description */}
+            <div className="space-y-6">
+              {/* Location */}
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 md:p-6 rounded-xl">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 dark:text-white flex items-center">
+                  <span className="mr-2">📍</span>
+                  Location
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm md:text-base">
+                  {business.location}
+                </p>
+              </div>
 
-          {/* Services/Amenities */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2 dark:text-white">Services</h3>
-            <div className="flex flex-wrap gap-2">
-              {getServicesForType(business.type).map((service, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm dark:bg-blue-900 dark:text-blue-200"
-                >
-                  {service}
-                </span>
-              ))}
-            </div>
-          </div>
+              {/* Rating */}
+              {business.rating && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 dark:text-white">Rating</h3>
+                  <div className="flex items-center">
+                    <div className="flex items-center mr-3">
+                      {[...Array(5)].map((_, i) => (
+                        <span 
+                          key={i}
+                          className={`text-xl ${i < Math.floor(business.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                        >
+                          ⭐
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-lg font-medium dark:text-white">{business.rating}/5</span>
+                    <span className="text-gray-500 ml-2 dark:text-gray-400 text-sm">
+                      ({business.review_count || 0} reviews)
+                    </span>
+                  </div>
+                </div>
+              )}
 
-          {/* Contact Info */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2 dark:text-white">Contact</h3>
-            <div className="space-y-2">
-              {business.phone && (
-                <p className="text-gray-600 flex items-center dark:text-gray-400">
+              {/* Description */}
+              {business.description && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 dark:text-white">About</h3>
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{business.description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Column 2: Operating Hours & Services */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Operating Hours */}
+              <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-xl border border-green-200 dark:border-green-800">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 dark:text-white flex items-center">
+                  <span className="mr-2">🕐</span>
+                  Operating Hours
+                </h3>
+                <div className="space-y-2 text-gray-600 dark:text-gray-300">
+                  <div className="flex justify-between">
+                    <span>Monday - Friday</span>
+                    <span className="font-medium">9:00 AM - 8:00 PM</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Saturday</span>
+                    <span className="font-medium">9:00 AM - 6:00 PM</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Sunday</span>
+                    <span className="font-medium">10:00 AM - 4:00 PM</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Services/Amenities */}
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-800">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 dark:text-white flex items-center">
+                  <span className="mr-2">⚡</span>
+                  Services
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {getServicesForType(business.type).map((service, index) => (
+                    <span
+                      key={index}
+                      className="px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium dark:bg-purple-900 dark:text-purple-200 transition-all hover:shadow-md"
+                    >
+                      {service}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Column 3: Contact Info & Social Media */}
+            <div className="md:col-span-2 lg:col-span-1 space-y-6">
+              {/* Contact Info */}
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 dark:text-white flex items-center">
                   <span className="mr-2">📞</span>
-                  {business.phone}
-                </p>
-              )}
-              {business.email && (
-                <p className="text-gray-600 flex items-center dark:text-gray-400">
-                  <span className="mr-2">✉️</span>
-                  {business.email}
-                </p>
-              )}
-              {business.website && (
-                <p className="text-gray-600 flex items-center dark:text-gray-400">
-                  <span className="mr-2">🌐</span>
-                  <a
-                    href={business.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
-                  >
-                    {business.website}
-                  </a>
-                </p>
+                  Contact
+                </h3>
+                <div className="space-y-3">
+                  {business.phone && (
+                    <div className="flex items-center text-gray-600 dark:text-gray-300">
+                      <span className="mr-3 text-lg">�</span>
+                      <span className="font-medium">{business.phone}</span>
+                    </div>
+                  )}
+                  {business.email && (
+                    <div className="flex items-center text-gray-600 dark:text-gray-300">
+                      <span className="mr-3 text-lg">✉️</span>
+                      <span className="font-medium">{business.email}</span>
+                    </div>
+                  )}
+                  {business.website && (
+                    <div className="flex items-center">
+                      <span className="mr-3 text-lg">🌐</span>
+                      <a
+                        href={business.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:text-indigo-800 font-medium hover:underline dark:text-indigo-400 transition-colors"
+                      >
+                        Visit Website
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Social Media */}
+              {(business.instagram_url || business.facebook_url) && (
+                <div className="bg-pink-50 dark:bg-pink-900/20 p-6 rounded-xl border border-pink-200 dark:border-pink-800">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 dark:text-white flex items-center">
+                    <span className="mr-2">🌟</span>
+                    Follow Us
+                  </h3>
+                  <div className="flex flex-col space-y-3">
+                    {business.instagram_url && (
+                      <a
+                        href={business.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-md"
+                      >
+                        <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.621 5.367 11.988 11.988 11.988s11.987-5.367 11.987-11.988C24.004 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.896 3.708 13.745 3.708 12.448s.49-2.448 1.297-3.323C5.901 8.198 7.052 7.708 8.349 7.708s2.448.49 3.323 1.297c.896.896 1.386 2.047 1.386 3.344s-.49 2.448-1.386 3.323c-.875.807-2.026 1.297-3.323 1.297z"/>
+                        </svg>
+                        <span className="font-medium">Instagram</span>
+                      </a>
+                    )}
+                    {business.facebook_url && (
+                      <a
+                        href={business.facebook_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-md"
+                      >
+                        <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                        <span className="font-medium">Facebook</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Interactive Map */}
-          {business.latitude && business.longitude && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 dark:text-white">Location on Map</h3>
-              <div className="h-64 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+        {/* Map Section - Full Width Below Columns */}
+        {business.latitude && business.longitude && (
+          <div className="px-6 pb-6">
+            <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 dark:text-white flex items-center">
+                <span className="mr-2">🗺️</span>
+                Location on Map
+              </h3>
+              <div className="h-80 rounded-xl overflow-hidden shadow-lg border-2 border-gray-200 dark:border-gray-600">
                 <MapContainer
                   center={[business.latitude, business.longitude]}
                   zoom={15}
@@ -175,8 +334,8 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
                   />
                   <Marker position={[business.latitude, business.longitude]}>
                     <Popup>
-                      <div className="text-center">
-                        <strong>{business.name}</strong><br />
+                      <div className="text-center p-2">
+                        <strong className="text-lg">{business.name}</strong><br />
                         <span className="text-sm text-gray-600">{business.location}</span><br />
                         <small className="text-xs text-gray-500">
                           Lat: {business.latitude}, Lng: {business.longitude}
@@ -187,23 +346,25 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
                 </MapContainer>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex gap-3 dark:border-gray-600">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
-          >
-            Close
-          </button>
-          <button
-            onClick={onBookNow}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-500 dark:hover:bg-blue-600"
-          >
-            Book Appointment
-          </button>
+        <div className="px-4 md:px-6 py-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-b-xl">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={onClose}
+              className="flex-1 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium dark:text-gray-200 dark:bg-gray-600 dark:border-gray-500 dark:hover:bg-gray-500"
+            >
+              Close
+            </button>
+            <button
+              onClick={onBookNow}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 transform hover:scale-[1.02] font-medium shadow-lg hover:shadow-xl dark:from-blue-500 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-blue-700"
+            >
+              📅 Book Appointment
+            </button>
+          </div>
         </div>
         </motion.div>
       </motion.div>

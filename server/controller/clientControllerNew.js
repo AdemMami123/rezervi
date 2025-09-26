@@ -32,6 +32,24 @@ const getBusinesses = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch businesses' });
     }
 
+    // Fetch primary photos for all businesses
+    if (businesses && businesses.length > 0) {
+      const businessIds = businesses.map(b => b.id);
+      const { data: photos, error: photosError } = await (req.supabase || require('../supabaseClient'))
+        .from('business_photos')
+        .select('business_id, photo_url')
+        .in('business_id', businessIds)
+        .eq('is_primary', true);
+
+      if (!photosError && photos) {
+        // Add primary photo to each business
+        businesses.forEach(business => {
+          const primaryPhoto = photos.find(p => p.business_id === business.id);
+          business.primary_photo = primaryPhoto?.photo_url || null;
+        });
+      }
+    }
+
     res.json(businesses);
   } catch (error) {
     console.error('Error in getBusinesses:', error);
@@ -56,6 +74,21 @@ const getBusinessDetails = async (req, res) => {
       console.error('Error fetching business details:', error);
       return res.status(404).json({ error: 'Business not found' });
     }
+
+    // Fetch business photos
+    const { data: photos, error: photosError } = await (req.supabase || require('../supabaseClient'))
+      .from('business_photos')
+      .select('*')
+      .eq('business_id', id)
+      .order('display_order');
+
+    if (photosError) {
+      console.error('Error fetching business photos:', photosError);
+      // Continue without photos if there's an error
+    }
+
+    // Add photos to business object
+    business.photos = photos || [];
 
     res.json({ business });
   } catch (error) {

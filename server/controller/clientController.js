@@ -13,6 +13,10 @@ const getBusinesses = async (req, res) => {
         location,
         latitude,
         longitude,
+        phone,
+        description,
+        instagram_url,
+        facebook_url,
         created_at,
         user_id,
         users!businesses_user_id_fkey(full_name)
