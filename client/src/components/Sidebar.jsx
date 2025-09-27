@@ -30,14 +30,22 @@ const ModernSidebar = ({
       description: 'Your reservations',
       badge: userBookings?.length || 0
     },
-    ...(userBusiness ? [{
-      id: 'business',
-      label: 'My Business',
-      icon: '🏢',
-      description: 'Manage your business',
-      badge: businessReservations?.length || 0,
-      badgeColor: 'green'
-    }] : []),
+    ...(userBusiness ? [
+      {
+        id: 'business',
+        label: 'My Business',
+        icon: '🏢',
+        description: 'Manage your business',
+        badge: businessReservations?.length || 0,
+        badgeColor: 'green'
+      },
+      {
+        id: 'business-calendar',
+        label: 'Business Calendar',
+        icon: '📆',
+        description: 'View bookings calendar'
+      }
+    ] : []),
     {
       id: 'profile',
       label: 'Profile',
@@ -63,7 +71,13 @@ const ModernSidebar = ({
 
   const NavItem = ({ item }) => (
     <motion.button
-      onClick={() => handleNavigation(item.id)}
+      onClick={() => {
+        if (item.path) {
+          navigate(item.path);
+        } else {
+          handleNavigation(item.id);
+        }
+      }}
       className={`w-full flex items-center px-4 py-3 rounded-lg transition-all duration-200 group relative ${
         activeSection === item.id
           ? 'bg-blue-500 text-white shadow-lg'

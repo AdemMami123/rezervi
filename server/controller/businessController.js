@@ -195,7 +195,7 @@ const getBusinessReservations = async (req, res) => {
     // Transform data to include booking details with correct field names
     const transformedReservations = reservations.map(reservation => ({
       ...reservation,
-      customer_name: reservation.users?.full_name || 'Unknown',
+      customer_name: reservation.customer_name || reservation.users?.full_name || 'Unknown',
       booking_date: reservation.date,
       booking_time: reservation.time
     }));

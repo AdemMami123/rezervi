@@ -4,6 +4,7 @@ import API, { acceptReservation, declineReservation } from '../utils/api';
 import BusinessDetailModal from '../components/BusinessDetailModal';
 import BookingModal from '../components/BookingModal';
 import BusinessCalendar from '../components/BusinessCalendar';
+import BusinessCalendarPage from '../pages/BusinessCalendarPage';
 import ReservationCard from '../components/ReservationCard';
 import UserProfile from '../components/UserProfile';
 import BookingDetailsModal from '../components/BookingDetailsModal';
@@ -218,6 +219,14 @@ function Home() {
 
   const handleBusinessUpdate = async (updatedBusiness) => {
     try {
+      // If passed business data directly (from business save), update state
+      if (updatedBusiness && typeof updatedBusiness === 'object') {
+        setUserBusiness(updatedBusiness);
+        console.log('Business updated in parent state:', updatedBusiness);
+        return;
+      }
+      
+      // Otherwise, make API call to update business (legacy behavior)
       const response = await API.put('/api/business/update', updatedBusiness);
       setUserBusiness(response.data.business);
       setShowBusinessEditModal(false);
@@ -480,6 +489,13 @@ function Home() {
                     userBusiness={userBusiness}
                     businessReservations={businessReservations}
                     handleReservationStatusUpdate={handleReservationStatusUpdate}
+                    onBusinessUpdate={handleBusinessUpdate}
+                  />
+                )}
+                
+                {activeSection === 'business-calendar' && userBusiness && (
+                  <BusinessCalendarPage
+                    key="business-calendar"
                   />
                 )}
 
@@ -1047,7 +1063,8 @@ const BookingsSection = ({
 const BusinessSection = ({ 
   userBusiness, 
   businessReservations = [], 
-  handleReservationStatusUpdate 
+  handleReservationStatusUpdate,
+  onBusinessUpdate 
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -1069,6 +1086,9 @@ const BusinessSection = ({
   // Initialize form data when userBusiness changes
   useEffect(() => {
     if (userBusiness) {
+      console.log('useEffect: Initializing editFormData with userBusiness:', userBusiness);
+      console.log('useEffect: userBusiness.business_hours:', userBusiness.business_hours);
+      
       setEditFormData({
         name: userBusiness.name || '',
         type: userBusiness.type || '',
@@ -1081,6 +1101,8 @@ const BusinessSection = ({
         facebook_url: userBusiness.facebook_url || '',
         business_hours: userBusiness.business_hours || null
       });
+      
+      console.log('useEffect: Set business_hours to:', userBusiness.business_hours || null);
     }
   }, [userBusiness]);
 
@@ -1104,6 +1126,9 @@ const BusinessSection = ({
     setMessage('');
     if (!isEditingDetails) {
       // Reset form data when entering edit mode
+      console.log('handleEditToggle: Entering edit mode with userBusiness:', userBusiness);
+      console.log('handleEditToggle: Current userBusiness.business_hours:', userBusiness?.business_hours);
+      
       setEditFormData({
         name: userBusiness?.name || '',
         type: userBusiness?.type || '',
@@ -1113,8 +1138,11 @@ const BusinessSection = ({
         latitude: userBusiness?.latitude || '',
         longitude: userBusiness?.longitude || '',
         instagram_url: userBusiness?.instagram_url || '',
-        facebook_url: userBusiness?.facebook_url || ''
+        facebook_url: userBusiness?.facebook_url || '',
+        business_hours: userBusiness?.business_hours || null
       });
+      
+      console.log('handleEditToggle: Set editFormData.business_hours to:', userBusiness?.business_hours || null);
     }
   };
 
@@ -1171,10 +1199,23 @@ const BusinessSection = ({
       setMessage('Business details updated successfully!');
       setIsEditingDetails(false);
       
-      // Refresh the page or update the business data
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      // Update the parent component's userBusiness state with the new data
+      if (response.data.business) {
+        // Call the parent's update function if available
+        if (typeof onBusinessUpdate === 'function') {
+          onBusinessUpdate(response.data.business);
+        }
+        
+        // Also trigger a page refresh after a short delay to ensure all components are updated
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        // Fallback: just refresh the page
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
     } catch (error) {
       console.error('handleSave: Error occurred:', error);
       console.error('handleSave: Error response:', error.response);
@@ -1212,7 +1253,10 @@ const BusinessSection = ({
       location: userBusiness?.location || '',
       description: userBusiness?.description || '',
       latitude: userBusiness?.latitude || '',
-      longitude: userBusiness?.longitude || ''
+      longitude: userBusiness?.longitude || '',
+      instagram_url: userBusiness?.instagram_url || '',
+      facebook_url: userBusiness?.facebook_url || '',
+      business_hours: userBusiness?.business_hours || null
     });
     setIsEditingDetails(false);
     setMessage('');
@@ -2051,7 +2095,7 @@ const ProfileSection = ({ user, userBusiness, setActiveSection }) => {
   );
 };
 
-// BusinessCard component
+// Enhanced BusinessCard component with modern styling
 const BusinessCard = ({ business, onSelect, onBookNow }) => {
   const getBusinessIcon = (type) => {
     const icons = {
@@ -2071,77 +2115,234 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
     return icons[type] || icons.other;
   };
 
+  const getBusinessTypeColor = (type) => {
+    const colors = {
+      barbershop: 'from-blue-500 to-blue-600',
+      beauty_salon: 'from-pink-500 to-rose-600',
+      restaurant: 'from-orange-500 to-red-600',
+      cafe: 'from-amber-500 to-orange-600',
+      football_field: 'from-green-500 to-emerald-600',
+      tennis_court: 'from-teal-500 to-cyan-600',
+      gym: 'from-purple-500 to-violet-600',
+      car_wash: 'from-cyan-500 to-blue-600',
+      spa: 'from-emerald-500 to-teal-600',
+      dentist: 'from-sky-500 to-blue-600',
+      doctor: 'from-indigo-500 to-blue-600',
+      other: 'from-gray-500 to-slate-600'
+    };
+    return colors[type] || colors.other;
+  };
+
+  // Function to check if business is available today
+  const getAvailabilityStatus = () => {
+    if (!business.business_hours) {
+      return { status: 'unknown', text: 'Hours Not Set', color: 'text-gray-500', bgColor: 'bg-gray-100 dark:bg-gray-900/30' };
+    }
+
+    const today = new Date();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const currentDay = dayNames[today.getDay()];
+    
+    const todayHours = business.business_hours[currentDay];
+    
+    if (!todayHours || !todayHours.isOpen) {
+      return { status: 'closed', text: 'Closed Today', color: 'text-red-500', bgColor: 'bg-red-100 dark:bg-red-900/30' };
+    }
+
+    const now = today.getHours() * 60 + today.getMinutes();
+    const [openHour, openMinute] = todayHours.openTime.split(':').map(Number);
+    const [closeHour, closeMinute] = todayHours.closeTime.split(':').map(Number);
+    
+    const openTime = openHour * 60 + openMinute;
+    const closeTime = closeHour * 60 + closeMinute;
+    
+    if (now < openTime) {
+      return { 
+        status: 'opening-later', 
+        text: `Opens at ${todayHours.openTime}`, 
+        color: 'text-blue-600 dark:text-blue-400', 
+        bgColor: 'bg-blue-100 dark:bg-blue-900/30' 
+      };
+    } else if (now >= openTime && now < closeTime) {
+      return { 
+        status: 'open', 
+        text: `Open until ${todayHours.closeTime}`, 
+        color: 'text-green-600 dark:text-green-400', 
+        bgColor: 'bg-green-100 dark:bg-green-900/30' 
+      };
+    } else {
+      return { 
+        status: 'closed', 
+        text: 'Closed Now', 
+        color: 'text-red-500', 
+        bgColor: 'bg-red-100 dark:bg-red-900/30' 
+      };
+    }
+  };
+
+  const availabilityStatus = getAvailabilityStatus();
+
   return (
     <motion.div 
-      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 h-full flex flex-col overflow-hidden"
+      className="group relative bg-white dark:bg-gray-800 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-700 h-full flex flex-col overflow-hidden backdrop-blur-sm"
       whileHover={{ 
-        scale: 1.02,
-        y: -4,
-        transition: { duration: 0.2 }
+        scale: 1.03,
+        y: -8,
+        transition: { duration: 0.3, ease: "easeOut" }
       }}
-      whileTap={{ scale: 0.98 }}
+      whileTap={{ scale: 0.97 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
     >
-      {/* Business Photo */}
-      {business.primary_photo && (
-        <div className="relative h-48 overflow-hidden">
+      {/* Animated background gradient */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500"></div>
+      
+      {/* Business Photo or Gradient Header */}
+      {business.primary_photo ? (
+        <div className="relative h-52 overflow-hidden">
           <img
             src={business.primary_photo}
             alt={business.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-        </div>
-      )}
-      
-      <div className="p-6 flex flex-col flex-grow">
-        <div className="flex items-start mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl flex items-center justify-center text-2xl mr-4">
-            {getBusinessIcon(business.type)}
+          {/* Enhanced Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
+          {/* Floating Business Type Badge */}
+          <div className="absolute top-4 left-4">
+            <div className={`px-3 py-1.5 bg-gradient-to-r ${getBusinessTypeColor(business.type)} text-white text-xs font-semibold rounded-full shadow-lg backdrop-blur-sm border border-white/20`}>
+              <span className="mr-1">{getBusinessIcon(business.type)}</span>
+              {business.type.replace('_', ' ').toUpperCase()}
+            </div>
           </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{business.name}</h3>
-            <p className="text-sm text-gray-600 capitalize dark:text-gray-300 mb-2">
-              {business.type.replace('_', ' ')}
-            </p>
-          </div>
-        </div>
-        
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2 dark:text-gray-400 flex-grow">
-          {business.description || 'Professional service provider offering quality solutions for your needs.'}
-        </p>
-        
-        <div className="space-y-2 mb-6">
-          <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-            <span className="mr-2">📍</span>
-            {business.location}
-          </p>
+          {/* Rating Badge */}
           {business.rating && (
-            <div className="flex items-center">
-              <span className="text-yellow-400 mr-1">⭐</span>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="absolute top-4 right-4">
+              <div className="px-2 py-1 bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white text-xs font-bold rounded-full shadow-lg backdrop-blur-sm flex items-center">
+                <span className="text-yellow-400 mr-1">⭐</span>
                 {business.rating}/5
-              </span>
-              <span className="text-xs text-gray-500 ml-2">({business.reviews || 0} reviews)</span>
+              </div>
             </div>
           )}
         </div>
+      ) : (
+        <div className={`relative h-52 bg-gradient-to-br ${getBusinessTypeColor(business.type)} flex items-center justify-center`}>
+          <div className="text-white text-6xl opacity-90">{getBusinessIcon(business.type)}</div>
+          {/* Floating Business Type Badge */}
+          <div className="absolute top-4 left-4">
+            <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold rounded-full border border-white/30">
+              {business.type.replace('_', ' ').toUpperCase()}
+            </div>
+          </div>
+          {/* Rating Badge */}
+          {business.rating && (
+            <div className="absolute top-4 right-4">
+              <div className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full border border-white/30 flex items-center">
+                <span className="text-yellow-300 mr-1">⭐</span>
+                {business.rating}/5
+              </div>
+            </div>
+          )}
+          {/* Decorative Pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+                               radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)`
+            }} />
+          </div>
+        </div>
+      )}
+      
+      <div className="p-6 flex flex-col flex-grow relative">
+        {/* Business Header */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+              {business.name}
+            </h3>
+            {!business.primary_photo && (
+              <div className={`w-10 h-10 bg-gradient-to-br ${getBusinessTypeColor(business.type)} rounded-xl flex items-center justify-center text-white text-lg shadow-md`}>
+                {getBusinessIcon(business.type)}
+              </div>
+            )}
+          </div>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+            {business.type.replace('_', ' ')}
+          </p>
+        </div>
+        
+        {/* Description */}
+        <p className="text-gray-600 text-sm mb-5 line-clamp-2 dark:text-gray-400 flex-grow leading-relaxed">
+          {business.description || 'Professional service provider offering quality solutions for your needs.'}
+        </p>
+        
+        {/* Business Info */}
+        <div className="space-y-3 mb-6">
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+            <div className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
+              <span className="text-blue-600 dark:text-blue-400 text-xs">📍</span>
+            </div>
+            <span className="truncate">{business.location}</span>
+          </div>
+          
+          {business.rating && (
+            <div className="flex items-center text-sm">
+              <div className="w-6 h-6 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mr-3">
+                <span className="text-yellow-600 dark:text-yellow-400 text-xs">⭐</span>
+              </div>
+              <span className="text-gray-600 dark:text-gray-400">
+                {business.rating}/5 Rating
+              </span>
+              {business.reviews && (
+                <span className="text-xs text-gray-500 dark:text-gray-500 ml-2">
+                  ({business.reviews} reviews)
+                </span>
+              )}
+            </div>
+          )}
+          
+          {/* Dynamic availability indicator */}
+          <div className="flex items-center text-sm">
+            <div className={`w-6 h-6 rounded-lg ${availabilityStatus.bgColor} flex items-center justify-center mr-3`}>
+              <span className={`${availabilityStatus.color} text-xs`}>🕒</span>
+            </div>
+            <span className={`${availabilityStatus.color} font-medium`}>
+              {availabilityStatus.text}
+            </span>
+          </div>
+        </div>
 
-        <div className="flex gap-2 mt-auto">
-        <button
-          onClick={() => onSelect(business)}
-          className="flex-1 px-4 py-3 text-blue-600 border border-blue-600 rounded-xl hover:bg-blue-50 transition-colors text-sm font-medium dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900"
-        >
-          View Details
-        </button>
-        <button
-          onClick={() => onBookNow(business)}
-          className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
-        >
-          Book Now
-        </button>
+        {/* Action Buttons */}
+        <div className="flex gap-3 mt-auto">
+          <motion.button
+            onClick={() => onSelect(business)}
+            className="flex-1 px-4 py-3 text-blue-600 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-400 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-300 text-sm font-semibold flex items-center justify-center space-x-2 group/btn"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span>👁️</span>
+            <span>View Details</span>
+          </motion.button>
+          
+          <motion.button
+            onClick={() => onBookNow(business)}
+            className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white rounded-2xl transition-all duration-300 text-sm font-semibold shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group/btn"
+            whileHover={{ 
+              scale: 1.02,
+              boxShadow: "0 10px 25px -5px rgba(59, 130, 246, 0.4)"
+            }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span>📅</span>
+            <span>Book Now</span>
+          </motion.button>
+        </div>
       </div>
-    </div>
+      
+      {/* Subtle shine effect on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000 ease-out" />
+      </div>
     </motion.div>
   );
 };

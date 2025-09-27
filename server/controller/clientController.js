@@ -17,6 +17,7 @@ const getBusinesses = async (req, res) => {
         description,
         instagram_url,
         facebook_url,
+        business_hours,
         created_at,
         user_id,
         users!businesses_user_id_fkey(full_name)
@@ -264,12 +265,20 @@ const createBooking = async (req, res) => {
       date: booking_date,
       time: booking_time,
       payment_status: payment_method === 'online' ? 'paid' : 'unpaid',
-      status: 'pending'
+      status: 'pending',
+      customer_name: customerInfo.name,
+      customer_phone: customerInfo.phone || '',
+      customer_email: customerInfo.email || ''
     };
 
     // Add client_id if authenticated
     if (user_id) {
       reservationData.client_id = user_id;
+    }
+
+    // Add notes if provided
+    if (notes) {
+      reservationData.notes = notes;
     }
 
     const { data: reservation, error } = await (req.supabase || require('../supabaseClient'))
@@ -298,7 +307,8 @@ const createBooking = async (req, res) => {
       booking_time: reservation.time,
       business_name: reservation.businesses?.name,
       business_type: reservation.businesses?.type,
-      status: 'confirmed' // Default status for frontend compatibility
+      customer_name: reservation.customer_name,
+      status: reservation.status // Use actual status from database
     };
 
     // TODO: Send SMS/Email notification

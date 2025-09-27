@@ -26,15 +26,19 @@ const WeeklyAvailability = ({ businessHours = null, onHoursChange, isEditing = f
     { key: 'sunday', label: 'Sunday', shortLabel: 'Sun' }
   ];
 
-  // Initialize hours from props - only once
+  // Initialize hours from props - reset when businessHours changes
   useEffect(() => {
-    if (businessHours && !isInitialized) {
+    console.log('WeeklyAvailability: businessHours changed:', businessHours);
+    console.log('WeeklyAvailability: isInitialized:', isInitialized);
+    
+    if (businessHours) {
       try {
         const parsedHours = typeof businessHours === 'string' 
           ? JSON.parse(businessHours) 
           : businessHours;
         
         if (parsedHours && typeof parsedHours === 'object') {
+          console.log('WeeklyAvailability: Setting hours to:', parsedHours);
           setHours(prevHours => ({
             ...prevHours,
             ...parsedHours
@@ -43,12 +47,15 @@ const WeeklyAvailability = ({ businessHours = null, onHoursChange, isEditing = f
         setIsInitialized(true);
       } catch (error) {
         console.error('Error parsing business hours:', error);
+        setHours(defaultHours);
         setIsInitialized(true);
       }
-    } else if (!businessHours && !isInitialized) {
+    } else {
+      console.log('WeeklyAvailability: No businessHours, using defaultHours');
+      setHours(defaultHours);
       setIsInitialized(true);
     }
-  }, [businessHours, isInitialized]);
+  }, [businessHours, defaultHours]);
 
   // Debounced callback to notify parent of changes
   const debouncedOnHoursChange = useCallback(

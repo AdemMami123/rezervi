@@ -28,8 +28,8 @@ const getUserBookings = async (req, res) => {
       booking_time: reservation.time,
       business_name: reservation.businesses?.name,
       business_type: reservation.businesses?.type,
-      // Use the actual status from the database, fallback to 'confirmed' if not set
-      status: reservation.status || 'confirmed'
+      // Use the actual status from the database, fallback to 'pending' if not set
+      status: reservation.status || 'pending'
     }));
 
     res.json({ bookings: transformedBookings });

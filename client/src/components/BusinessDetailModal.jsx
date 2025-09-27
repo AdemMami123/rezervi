@@ -195,18 +195,20 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
                   Operating Hours
                 </h3>
                 <div className="space-y-2 text-gray-600 dark:text-gray-300">
-                  <div className="flex justify-between">
-                    <span>Monday - Friday</span>
-                    <span className="font-medium">9:00 AM - 8:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Saturday</span>
-                    <span className="font-medium">9:00 AM - 6:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Sunday</span>
-                    <span className="font-medium">10:00 AM - 4:00 PM</span>
-                  </div>
+                  {business.business_hours ? (
+                    Object.entries(business.business_hours).map(([day, hours]) => (
+                      <div key={day} className="flex justify-between">
+                        <span className="capitalize">{day}</span>
+                        <span className="font-medium">
+                          {hours.isOpen ? `${hours.openTime} - ${hours.closeTime}` : 'Closed'}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4">
+                      <span className="text-gray-500 dark:text-gray-400">Hours not set</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
