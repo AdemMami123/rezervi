@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import API from '../utils/api';
+import StarRating from '../components/StarRating';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -437,17 +438,27 @@ const BusinessCard = ({ business, userLocation, onSelect }) => {
         {/* Reviews Section */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-1">
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <span
-                  key={star}
-                  className={`text-sm ${star <= 4 ? 'text-yellow-400' : 'text-gray-300'}`}
-                >
-                  ★
+            {business.rating && business.rating.totalReviews > 0 ? (
+              <>
+                <StarRating 
+                  rating={business.rating.averageRating} 
+                  readonly 
+                  size="sm" 
+                />
+                <span className="text-sm text-gray-600 ml-1">
+                  {business.rating.averageRating.toFixed(1)} ({business.rating.totalReviews} review{business.rating.totalReviews !== 1 ? 's' : ''})
                 </span>
-              ))}
-            </div>
-            <span className="text-sm text-gray-600 ml-1">4.2 (23 reviews)</span>
+              </>
+            ) : (
+              <>
+                <StarRating 
+                  rating={0} 
+                  readonly 
+                  size="sm" 
+                />
+                <span className="text-sm text-gray-500 ml-1">No reviews yet</span>
+              </>
+            )}
           </div>
           
           {/* Payment Options */}

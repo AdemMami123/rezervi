@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const businessRoutes = require('./routes/businessRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const userRoutes = require('./routes/userRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 
 // Cookie parser should be early in the middleware chain
 app.use(cookieParser());
@@ -51,7 +52,8 @@ app.get('/', (req, res) => {
       auth: '/auth/*',
       business: '/api/business/*',
       client: '/api/*',
-      user: '/api/user/*'
+      user: '/api/user/*',
+      reviews: '/api/reviews/*'
     }
   });
 });
@@ -65,6 +67,7 @@ app.use('/auth', authRoutes);
 app.use('/api/business', businessRoutes);
 app.use('/api', clientRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () =>

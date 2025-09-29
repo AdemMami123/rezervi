@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import StarRating from './StarRating';
+import RatingModal from './RatingModal';
+import ReviewsList from './ReviewsList';
+import API from '../utils/api';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default markers in React-Leaflet
@@ -14,6 +18,55 @@ L.Icon.Default.mergeOptions({
 
 const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [existingReview, setExistingReview] = useState(null);
+  const [currentRating, setCurrentRating] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const checkAuthStatus = async () => {
+    try {
+      // Try to make an authenticated request to check if user is logged in
+      const response = await API.get('/auth/me');
+      setIsAuthenticated(true);
+    } catch (error) {
+      setIsAuthenticated(false);
+    }
+  };
+
+  const checkReviewPermission = async () => {
+    if (!isAuthenticated || !business?.id) return;
+    
+    try {
+      const response = await API.get(`/api/reviews/can-review/${business.id}`);
+      setCanReview(response.data.canReview);
+      setExistingReview(response.data.existingReview);
+    } catch (error) {
+      console.error('Error checking review permission:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (business?.id) {
+      checkAuthStatus();
+    }
+  }, [business?.id]);
+
+  useEffect(() => {
+    if (isAuthenticated && business?.id) {
+      checkReviewPermission();
+    }
+  }, [isAuthenticated, business?.id]);
+
+  const handleReviewSubmitted = (newReview) => {
+    setExistingReview(newReview);
+    setCanReview(false);
+    // The ReviewsList component will update automatically
+  };
+
+  const handleRatingUpdate = (ratingData) => {
+    setCurrentRating(ratingData);
+  };
   
   if (!business) return null;
 
@@ -154,28 +207,69 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
                 </p>
               </div>
 
-              {/* Rating */}
-              {business.rating && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-xl border border-yellow-200 dark:border-yellow-800">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 dark:text-white">Rating</h3>
-                  <div className="flex items-center">
-                    <div className="flex items-center mr-3">
-                      {[...Array(5)].map((_, i) => (
-                        <span 
-                          key={i}
-                          className={`text-xl ${i < Math.floor(business.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                        >
-                          ⭐
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-lg font-medium dark:text-white">{business.rating}/5</span>
+              {/* Rating & Reviews Section */}
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Reviews & Ratings
+                  </h3>
+                  {isAuthenticated && canReview && (
+                    <button
+                      onClick={(e) => {
+                        console.log('Write Review button clicked');
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setShowRatingModal(true);
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Write Review
+                    </button>
+                  )}
+                  {existingReview && (
+                    <button
+                      onClick={(e) => {
+                        console.log('Update Review button clicked');
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setShowRatingModal(true);
+                      }}
+                      className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                    >
+                      Update Review
+                    </button>
+                  )}
+                </div>
+
+                {/* Current Rating Display */}
+                {(currentRating || (business.rating && business.rating.totalReviews > 0)) && (
+                  <div className="flex items-center mb-4">
+                    <StarRating 
+                      rating={currentRating?.averageRating || business.rating?.averageRating || 0} 
+                      readonly 
+                      size="lg" 
+                      showValue 
+                    />
                     <span className="text-gray-500 ml-2 dark:text-gray-400 text-sm">
-                      ({business.review_count || 0} reviews)
+                      ({(currentRating?.totalReviews || business.rating?.totalReviews || 0)} review{(currentRating?.totalReviews || business.rating?.totalReviews || 0) !== 1 ? 's' : ''})
                     </span>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Reviews List */}
+                <ReviewsList 
+                  businessId={business.id} 
+                  onReviewUpdate={handleRatingUpdate}
+                />
+
+                {!isAuthenticated && (
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <a href="/login" className="text-blue-600 hover:text-blue-800">Sign in</a> to write a review
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Description */}
               {business.description && (
@@ -363,6 +457,19 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
           </div>
         </div>
         </motion.div>
+
+        {/* Rating Modal */}
+        <RatingModal
+          isOpen={showRatingModal}
+          onClose={() => {
+            console.log('Rating modal closing');
+            setShowRatingModal(false);
+          }}
+          businessId={business.id}
+          businessName={business.name}
+          existingReview={existingReview}
+          onReviewSubmitted={handleReviewSubmitted}
+        />
       </motion.div>
     </AnimatePresence>
   );

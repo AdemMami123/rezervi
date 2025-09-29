@@ -32,9 +32,11 @@ const getBusinesses = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch businesses' });
     }
 
-    // Fetch primary photos for all businesses
+    // Fetch primary photos and reviews for all businesses
     if (businesses && businesses.length > 0) {
       const businessIds = businesses.map(b => b.id);
+      
+      // Fetch primary photos
       const { data: photos, error: photosError } = await (req.supabase || require('../supabaseClient'))
         .from('business_photos')
         .select('business_id, photo_url')
@@ -46,6 +48,45 @@ const getBusinesses = async (req, res) => {
         businesses.forEach(business => {
           const primaryPhoto = photos.find(p => p.business_id === business.id);
           business.primary_photo = primaryPhoto?.photo_url || null;
+        });
+      }
+
+      // Fetch reviews and calculate ratings
+      const { data: reviews, error: reviewsError } = await (req.supabase || require('../supabaseClient'))
+        .from('reviews')
+        .select('business_id, rating')
+        .in('business_id', businessIds);
+
+      if (!reviewsError && reviews) {
+        // Group reviews by business and calculate averages
+        const reviewsByBusiness = reviews.reduce((acc, review) => {
+          if (!acc[review.business_id]) {
+            acc[review.business_id] = [];
+          }
+          acc[review.business_id].push(review.rating);
+          return acc;
+        }, {});
+
+        // Add rating information to each business
+        businesses.forEach(business => {
+          const businessReviews = reviewsByBusiness[business.id] || [];
+          const totalReviews = businessReviews.length;
+          const averageRating = totalReviews > 0 
+            ? businessReviews.reduce((sum, rating) => sum + rating, 0) / totalReviews 
+            : 0;
+
+          business.rating = {
+            averageRating: Math.round(averageRating * 10) / 10,
+            totalReviews
+          };
+        });
+      } else {
+        // Add default rating info if reviews fetch fails
+        businesses.forEach(business => {
+          business.rating = {
+            averageRating: 0,
+            totalReviews: 0
+          };
         });
       }
     }
