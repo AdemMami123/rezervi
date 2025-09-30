@@ -15,7 +15,8 @@ const {
   uploadBusinessPhotos,
   getBusinessPhotos,
   deleteBusinessPhoto,
-  updateBusinessPhoto
+  updateBusinessPhoto,
+  deleteBusiness
 } = require('../controller/businessController');
 
 // Setup multer for file uploads
@@ -45,6 +46,7 @@ router.use(protect);
 router.post('/register', upload.array('business_photos', 10), registerBusiness);
 router.get('/user-business', getUserBusiness);
 router.put('/update', updateBusiness);
+router.delete('/delete', deleteBusiness);
 
 // Photo management
 router.post('/photos', upload.array('business_photos', 10), uploadBusinessPhotos);

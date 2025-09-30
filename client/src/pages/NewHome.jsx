@@ -2088,7 +2088,8 @@ const ProfileSection = ({ user, userBusiness, setActiveSection }) => {
       {userData && (
         <UserProfile 
           user={userData} 
-          onProfileUpdate={handleProfileUpdate} 
+          onProfileUpdate={handleProfileUpdate}
+          business={userBusiness}
         />
       )}
     </motion.div>

@@ -4,9 +4,11 @@ import UserProfile from '../components/UserProfile';
 import { authAPI } from '../api/auth';
 import { useNavigate } from 'react-router-dom';
 import AnimatedLayout from '../components/AnimatedLayout';
+import API from '../utils/api';
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
+  const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -16,6 +18,19 @@ const ProfilePage = () => {
     try {
       const userData = await authAPI.getMe();
       setUser(userData);
+      
+      // Try to fetch user's business if they have one
+      try {
+        const businessRes = await API.get('/api/business/user-business');
+        if (businessRes.data.business) {
+          setBusiness(businessRes.data.business);
+        }
+      } catch (businessErr) {
+        // User might not have a business, that's okay
+        console.log('No business found for user');
+        setBusiness(null);
+      }
+      
       setError(null);
     } catch (err) {
       setError('Failed to load profile data. Please try again.');
@@ -72,7 +87,8 @@ const ProfilePage = () => {
         {user && (
           <UserProfile 
             user={user} 
-            onProfileUpdate={handleProfileUpdate} 
+            onProfileUpdate={handleProfileUpdate}
+            business={business}
           />
         )}
       </div>

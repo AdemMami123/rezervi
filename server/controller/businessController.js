@@ -834,6 +834,99 @@ const updateBusinessPhoto = async (req, res) => {
   }
 };
 
+// Delete business and all associated data
+const deleteBusiness = async (req, res) => {
+  const user_id = req.user?.id;
+
+  if (!user_id) {
+    return res.status(401).json({ error: 'User not authenticated.' });
+  }
+
+  try {
+    // First, get the business ID for this user
+    const { data: business, error: businessError } = await req.supabase
+      .from('businesses')
+      .select('id')
+      .eq('user_id', user_id)
+      .single();
+
+    if (businessError) {
+      if (businessError.code === 'PGRST116') {
+        return res.status(404).json({ error: 'No business found for this user.' });
+      }
+      return res.status(400).json({ error: businessError.message });
+    }
+
+    const business_id = business.id;
+
+    // Get all business photos to delete from storage
+    const { data: photos } = await req.supabase
+      .from('business_photos')
+      .select('photo_url')
+      .eq('business_id', business_id);
+
+    // Delete photos from storage
+    if (photos && photos.length > 0) {
+      for (const photo of photos) {
+        try {
+          const fileName = photo.photo_url.split('/').pop();
+          await req.supabase.storage
+            .from('business-photos')
+            .remove([fileName]);
+        } catch (storageError) {
+          console.warn('Failed to delete photo from storage:', storageError);
+          // Continue with deletion even if storage cleanup fails
+        }
+      }
+    }
+
+    // Delete associated data in order (foreign key constraints)
+    // 1. Delete business photos
+    await req.supabase
+      .from('business_photos')
+      .delete()
+      .eq('business_id', business_id);
+
+    // 2. Delete business settings
+    await req.supabase
+      .from('business_settings')
+      .delete()
+      .eq('business_id', business_id);
+
+    // 3. Delete reviews
+    await req.supabase
+      .from('reviews')
+      .delete()
+      .eq('business_id', business_id);
+
+    // 4. Delete reservations
+    await req.supabase
+      .from('reservations')
+      .delete()
+      .eq('business_id', business_id);
+
+    // 5. Finally, delete the business
+    const { error: deleteError } = await req.supabase
+      .from('businesses')
+      .delete()
+      .eq('id', business_id)
+      .eq('user_id', user_id); // Double check ownership
+
+    if (deleteError) {
+      return res.status(400).json({ error: deleteError.message });
+    }
+
+    res.status(200).json({ 
+      message: 'Business and all associated data deleted successfully',
+      business_id: business_id
+    });
+
+  } catch (error) {
+    console.error('Exception in deleteBusiness:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = { 
   registerBusiness,
   getBusinessReservations,
@@ -848,5 +941,6 @@ module.exports = {
   uploadBusinessPhotos,
   getBusinessPhotos,
   deleteBusinessPhoto,
-  updateBusinessPhoto
+  updateBusinessPhoto,
+  deleteBusiness
 }; 

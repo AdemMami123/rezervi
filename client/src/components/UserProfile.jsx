@@ -3,8 +3,10 @@ import { motion } from 'framer-motion';
 import { authAPI } from '../api/auth';
 import { useNavigate } from 'react-router-dom';
 import { FiUser, FiMail, FiCalendar, FiEdit, FiSave, FiXCircle, FiCamera } from 'react-icons/fi';
+import BusinessDeleteModal from './BusinessDeleteModal';
+import API from '../utils/api';
 
-const UserProfile = ({ user, onProfileUpdate }) => {
+const UserProfile = ({ user, onProfileUpdate, business }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -12,6 +14,7 @@ const UserProfile = ({ user, onProfileUpdate }) => {
     full_name: user?.full_name || '',
   });
   const [previewUrl, setPreviewUrl] = useState(user?.profile_picture_url || null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -90,6 +93,16 @@ const UserProfile = ({ user, onProfileUpdate }) => {
     setPreviewUrl(user?.profile_picture_url || null);
     setIsEditing(false);
     setError(null);
+  };
+
+  const handleBusinessDeleted = () => {
+    setShowDeleteModal(false);
+    // Refresh profile to update business status
+    if (onProfileUpdate) {
+      onProfileUpdate();
+    }
+    // Redirect to home or show success message
+    navigate('/');
   };
 
   const triggerFileInput = () => {
@@ -241,6 +254,98 @@ const UserProfile = ({ user, onProfileUpdate }) => {
           </form>
         </div>
       </div>
+
+      {/* Business Management Section - Only show if user has a business */}
+      {business && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-red-50/90 dark:bg-red-900/20 rounded-lg shadow-xl border-2 border-red-200/50 dark:border-red-800/50 overflow-hidden mt-6"
+        >
+          <div className="p-6 sm:p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-red-800 dark:text-red-200 flex items-center gap-3">
+                  <span className="text-3xl">⚠️</span>
+                  Business Management
+                </h3>
+                <p className="text-red-700 dark:text-red-300 mt-1 text-sm">
+                  Manage or delete your business from here
+                </p>
+              </div>
+            </div>
+
+            {/* Business Info Card */}
+            <div className="bg-white dark:bg-red-900/30 rounded-xl p-6 border border-red-200 dark:border-red-800 mb-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Your Business
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <p className="text-gray-700 dark:text-gray-300">
+                      <span className="font-medium">Name:</span> {business.name}
+                    </p>
+                    <p className="text-gray-700 dark:text-gray-300">
+                      <span className="font-medium">Type:</span> {business.type?.replace('_', ' ')}
+                    </p>
+                    <p className="text-gray-700 dark:text-gray-300">
+                      <span className="font-medium">Location:</span> {business.location}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/my-business')}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Manage Business
+                </button>
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="bg-white dark:bg-red-900/30 rounded-xl p-6 border border-red-300 dark:border-red-800">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h4 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+                    Delete Business
+                  </h4>
+                  <p className="text-red-700 dark:text-red-300 text-sm mb-4">
+                    Permanently delete your business and all associated data including reservations, 
+                    photos, and customer information. This action cannot be undone.
+                  </p>
+                  <ul className="text-red-600 dark:text-red-400 text-xs space-y-1 ml-4 list-disc">
+                    <li>All business information will be permanently deleted</li>
+                    <li>All reservations and booking history will be lost</li>
+                    <li>All uploaded photos will be removed</li>
+                    <li>Customer data and reviews will be deleted</li>
+                  </ul>
+                </div>
+                <div className="ml-6 flex-shrink-0">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowDeleteModal(true)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border-2 border-red-700"
+                  >
+                    <span>🗑️</span>
+                    Delete Business
+                  </motion.button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Business Delete Modal */}
+      <BusinessDeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        business={business}
+        onDeleted={handleBusinessDeleted}
+      />
     </motion.div>
   );
 };
