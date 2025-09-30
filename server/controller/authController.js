@@ -1,35 +1,50 @@
 const supabase = require('../supabaseClient');
-// const { createClient } = require('@supabase/supabase-js'); // Removing temporary debug import
+const { createClient } = require('@supabase/supabase-js');
 
-// Removed supabaseAdmin initialization and helper function as they are not needed outside of debug
+// Create a separate admin client that always uses service role
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 const register = async (req, res) => {
   const { email, password, full_name } = req.body;
 
   try {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // Use admin client for auth signup to ensure we can create the user
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
+      email_confirm: false // Set to true if you want to skip email confirmation
     });
 
     if (authError) return res.status(400).json({ error: authError.message });
 
     const user_id = authData.user.id;
 
-    // Insert user into public.users table with a default role of 'client'
-    const { data: publicUserData, error: publicUserError } = await supabase
+    // Insert user into public.users table using admin client to bypass RLS
+    const { data: publicUserData, error: publicUserError } = await supabaseAdmin
       .from('users')
       .insert([{ id: user_id, role: 'client', full_name: full_name || email }])
       .select();
 
     if (publicUserError) {
       console.error('Error inserting into public.users:', publicUserError);
+      // Try to clean up the auth user if profile creation failed
+      await supabaseAdmin.auth.admin.deleteUser(user_id);
       return res.status(500).json({ error: 'User registration failed: could not create user profile.' });
     }
 
     res.status(200).json({ message: 'Registration successful, please check your email for verification.', user: authData.user });
 
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -47,8 +62,8 @@ const login = async (req, res) => {
 
     const user_id = data.user.id;
 
-    // Upsert user into public.users table
-    const { error: upsertError } = await supabase
+    // Upsert user into public.users table using admin client to bypass RLS
+    const { error: upsertError } = await supabaseAdmin
       .from('users')
       .upsert(
         { id: user_id, role: 'client', full_name: data.user.email },
@@ -148,8 +163,8 @@ const updateProfile = async (req, res) => {
   
   try {
     console.log('Updating user in Supabase using admin rights (bypassing RLS)...');
-    // Use the server's admin client (supabase) instead of req.supabase to bypass RLS
-    const { data, error } = await supabase
+    // Use the admin client (supabaseAdmin) to bypass RLS
+    const { data, error } = await supabaseAdmin
       .from('users')
       .update({ 
         full_name
@@ -196,8 +211,8 @@ const uploadProfilePicture = async (req, res) => {
     const fileName = `${userId}-${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`; // No subfolder needed
 
-    // Upload to Supabase Storage using the 'profile images' bucket
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // Upload to Supabase Storage using the 'profile images' bucket with admin client
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from('profile images')
       .upload(filePath, file.buffer, {
         contentType: file.mimetype,
@@ -209,14 +224,14 @@ const uploadProfilePicture = async (req, res) => {
     }
 
     // Get the public URL
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = supabaseAdmin.storage
       .from('profile images')
       .getPublicUrl(filePath);
 
     const publicUrl = publicUrlData.publicUrl;
 
     // Update user profile with the new picture URL using admin rights (bypassing RLS)
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .update({ 
         profile_picture_url: publicUrl
