@@ -17,11 +17,14 @@ const register = async (req, res) => {
   const { email, password, full_name } = req.body;
 
   try {
-    // Use admin client for auth signup to ensure we can create the user
+    // Use admin client to create user without email confirmation
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: false // Set to true if you want to skip email confirmation
+      email_confirm: true, // Skip email confirmation - user is auto-confirmed
+      user_metadata: {
+        full_name: full_name || email
+      }
     });
 
     if (authError) return res.status(400).json({ error: authError.message });
@@ -41,7 +44,10 @@ const register = async (req, res) => {
       return res.status(500).json({ error: 'User registration failed: could not create user profile.' });
     }
 
-    res.status(200).json({ message: 'Registration successful, please check your email for verification.', user: authData.user });
+    res.status(200).json({ 
+      message: 'Registration successful! You can now log in.', 
+      user: authData.user
+    });
 
   } catch (error) {
     console.error('Registration error:', error);
