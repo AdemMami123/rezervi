@@ -2,10 +2,7 @@
   "name": "rezervi",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "client"
-  ],
   "scripts": {
-    "build": "npm --prefix client install --legacy-peer-deps && npm --prefix client run build"
+    "build": "npm --prefix client install && npm --prefix client run build"
   }
 }
