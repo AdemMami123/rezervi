@@ -1,0 +1,10 @@
+{
+  "name": "rezervi",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install-client": "cd client && npm install --legacy-peer-deps",
+    "build": "cd client && npm run build",
+    "vercel-build": "npm run install-client && npm run build"
+  }
+}
