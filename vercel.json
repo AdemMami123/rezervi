@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd client && npm install && npm run build",
-  "outputDirectory": "client/build",
+  "buildCommand": "npm install --prefix client && npm run build --prefix client && cp -r client/build ./build",
+  "outputDirectory": "build",
   "installCommand": "echo 'skipping'",
   "rewrites": [
     {
