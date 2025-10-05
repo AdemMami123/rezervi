@@ -18,8 +18,12 @@ import LeafletMapPicker from '../components/LeafletMapPicker';
 import BusinessMapModal from '../components/BusinessMapModal';
 import WeeklyAvailability from '../components/WeeklyAvailability';
 import ErrorBoundary from '../components/ErrorBoundary';
+import ConversationList from '../components/ConversationList';
+import ChatWindow from '../components/ChatWindow';
+import useMessaging from '../hooks/useMessaging';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI } from '../api/auth';
+import toast from 'react-hot-toast';
 
 function Home() {
   const [user, setUser] = useState(null);
@@ -28,6 +32,7 @@ function Home() {
   const [filteredBusinesses, setFilteredBusinesses] = useState([]);
   const [userBookings, setUserBookings] = useState([]);
   const [businessReservations, setBusinessReservations] = useState([]);
+  const [businessRating, setBusinessRating] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,6 +65,21 @@ function Home() {
   const location = useLocation();
   const businessesPerPage = 12;
 
+  // Messaging hook
+  const {
+    conversations,
+    activeConversation,
+    messages,
+    loading: messagesLoading,
+    fetchConversations,
+    fetchMessages,
+    createConversation,
+    sendMessage,
+    markAsRead,
+    deleteConversation,
+    setActiveConversation,
+  } = useMessaging();
+
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -75,6 +95,21 @@ function Home() {
     applyFilters();
   }, [businesses, searchTerm, filters]);
 
+  // Fetch conversations when user is loaded
+  useEffect(() => {
+    if (user) {
+      fetchConversations();
+    }
+  }, [user, fetchConversations]);
+
+  // Fetch messages when active conversation changes
+  useEffect(() => {
+    if (activeConversation) {
+      fetchMessages(activeConversation.id);
+      markAsRead(activeConversation.id);
+    }
+  }, [activeConversation?.id]);
+
   const fetchInitialData = async () => {
     try {
       setLoading(true);
@@ -88,6 +123,18 @@ function Home() {
         const businessRes = await API.get('/api/business/user-business');
         if (businessRes.data.business) {
           setUserBusiness(businessRes.data.business);
+          
+          // Fetch business rating
+          try {
+            const ratingRes = await API.get(`/api/reviews/business/${businessRes.data.business.id}`);
+            if (ratingRes.data?.stats) {
+              setBusinessRating(ratingRes.data.stats.averageRating);
+            }
+          } catch (ratingErr) {
+            console.log('No reviews yet for this business');
+            setBusinessRating(0);
+          }
+          
           // If user owns a business, also fetch their reservations
           const reservationsRes = await API.get('/api/business/reservations');
           // Ensure businessReservations is always an array
@@ -151,7 +198,7 @@ function Home() {
     if (filters.rating) {
       const minRating = parseFloat(filters.rating);
       filtered = filtered.filter(business => 
-        business.rating && business.rating >= minRating
+        business.rating && business.rating.averageRating >= minRating
       );
     }
 
@@ -177,9 +224,21 @@ function Home() {
     }
   };
 
-  const handleBusinessSelect = (business) => {
-    setSelectedBusiness(business);
-    setShowBusinessDetailModal(true);
+  const handleBusinessSelect = async (business) => {
+    try {
+      // Fetch full business details including photos
+      console.log('Fetching business details for ID:', business.id);
+      const response = await API.get(`/api/businesses/${business.id}`);
+      console.log('Business details response:', response.data);
+      console.log('Photos in response:', response.data.business?.photos);
+      setSelectedBusiness(response.data.business);
+      setShowBusinessDetailModal(true);
+    } catch (error) {
+      console.error('Error fetching business details:', error);
+      // Fallback to basic business data if fetch fails
+      setSelectedBusiness(business);
+      setShowBusinessDetailModal(true);
+    }
   };
 
   const handleBookNow = (business) => {
@@ -234,6 +293,41 @@ function Home() {
     } catch (err) {
       console.error('Error updating business:', err);
       alert('Failed to update business');
+    }
+  };
+
+  // Messaging handlers
+  const handleSelectConversation = (conversation) => {
+    setActiveConversation(conversation);
+    markAsRead(conversation.id);
+  };
+
+  const handleSendMessage = async (conversationId, content) => {
+    try {
+      await sendMessage(conversationId, content);
+    } catch (err) {
+      toast.error('Failed to send message');
+      throw err;
+    }
+  };
+
+  const handleDeleteConversation = async (conversationId) => {
+    try {
+      await deleteConversation(conversationId);
+      toast.success('Conversation deleted');
+    } catch (err) {
+      toast.error('Failed to delete conversation');
+    }
+  };
+
+  const handleCreateConversation = async (businessId) => {
+    try {
+      const conversation = await createConversation(businessId);
+      setActiveConversation(conversation);
+      setActiveSection('messages');
+      toast.success('Conversation started!');
+    } catch (err) {
+      toast.error('Failed to start conversation');
     }
   };
 
@@ -483,6 +577,20 @@ function Home() {
                   />
                 )}
 
+                {activeSection === 'messages' && (
+                  <MessagesSection
+                    key="messages"
+                    conversations={conversations}
+                    activeConversation={activeConversation}
+                    messages={messages}
+                    currentUserId={user?.id}
+                    onSelectConversation={handleSelectConversation}
+                    onSendMessage={handleSendMessage}
+                    onDeleteConversation={handleDeleteConversation}
+                    loading={messagesLoading}
+                  />
+                )}
+
                 {activeSection === 'business' && userBusiness && (
                   <BusinessSection 
                     key="business"
@@ -490,6 +598,7 @@ function Home() {
                     businessReservations={businessReservations}
                     handleReservationStatusUpdate={handleReservationStatusUpdate}
                     onBusinessUpdate={handleBusinessUpdate}
+                    businessRating={businessRating}
                   />
                 )}
                 
@@ -524,6 +633,7 @@ function Home() {
               setShowBusinessDetailModal(false);
               setShowBookingModal(true);
             }}
+            onContactBusiness={handleCreateConversation}
           />
         )}
 
@@ -1064,7 +1174,8 @@ const BusinessSection = ({
   userBusiness, 
   businessReservations = [], 
   handleReservationStatusUpdate,
-  onBusinessUpdate 
+  onBusinessUpdate,
+  businessRating 
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -1294,9 +1405,9 @@ const BusinessSection = ({
       totalReservations: reservations.length,
       pendingReservations,
       totalRevenue,
-      averageRating: '4.8'
+      averageRating: businessRating !== null ? businessRating.toFixed(1) : '0.0'
     };
-  }, [businessReservations]);
+  }, [businessReservations, businessRating]);
 
   const navigationItems = [
     { id: 'overview', label: 'Overview', icon: '📊', description: 'Dashboard & Analytics' },
@@ -1852,6 +1963,37 @@ const BusinessSection = ({
                     </div>
                   </div>
                 )}
+                
+                {/* Business Photos Display */}
+                {userBusiness?.photos && userBusiness.photos.length > 0 && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Business Photos ({userBusiness.photos.length}/10)
+                    </label>
+                    <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                        {userBusiness.photos.map((photo, index) => (
+                          <div key={photo.id} className="relative group">
+                            <img
+                              src={photo.photo_url}
+                              alt={`Business photo ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg shadow-sm group-hover:shadow-md transition-shadow"
+                            />
+                            {photo.is_primary && (
+                              <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                ⭐ Primary
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                        💡 To manage photos, visit the Business Profile section in the main dashboard
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
                 {userBusiness?.latitude && userBusiness?.longitude && (
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Map Location</label>
@@ -2036,6 +2178,99 @@ const BusinessSection = ({
 };
 
 // Profile Section Component
+// Messages Section Component
+const MessagesSection = ({ 
+  conversations, 
+  activeConversation, 
+  messages, 
+  currentUserId,
+  onSelectConversation,
+  onSendMessage,
+  onDeleteConversation,
+  loading 
+}) => {
+  const [showMobileChat, setShowMobileChat] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center">
+          <svg className="w-8 h-8 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          Messages
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Chat with businesses and customers
+        </p>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:grid md:grid-cols-3 gap-6">
+        {/* Conversation List */}
+        <div className="col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden h-[600px]">
+          <ConversationList
+            conversations={conversations}
+            activeConversation={activeConversation}
+            onSelectConversation={(conv) => {
+              onSelectConversation(conv);
+              setShowMobileChat(true);
+            }}
+            onDeleteConversation={onDeleteConversation}
+            loading={loading}
+          />
+        </div>
+
+        {/* Chat Window */}
+        <div className="col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden h-[600px]">
+          <ChatWindow
+            conversation={activeConversation}
+            messages={messages}
+            currentUserId={currentUserId}
+            onSendMessage={onSendMessage}
+            loading={loading}
+          />
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden">
+        {!showMobileChat ? (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden h-[600px]">
+            <ConversationList
+              conversations={conversations}
+              activeConversation={activeConversation}
+              onSelectConversation={(conv) => {
+                onSelectConversation(conv);
+                setShowMobileChat(true);
+              }}
+              onDeleteConversation={onDeleteConversation}
+              loading={loading}
+            />
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden h-[600px]">
+            <ChatWindow
+              conversation={activeConversation}
+              messages={messages}
+              currentUserId={currentUserId}
+              onSendMessage={onSendMessage}
+              onClose={() => setShowMobileChat(false)}
+              loading={loading}
+            />
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
 const ProfileSection = ({ user, userBusiness, setActiveSection }) => {
   const [userData, setUserData] = useState(user);
   const [loading, setLoading] = useState(false);
@@ -2217,11 +2452,11 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
             </div>
           </div>
           {/* Rating Badge */}
-          {business.rating && (
+          {business.rating && business.rating.averageRating > 0 && (
             <div className="absolute top-4 right-4">
               <div className="px-2 py-1 bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white text-xs font-bold rounded-full shadow-lg backdrop-blur-sm flex items-center">
                 <span className="text-yellow-400 mr-1">⭐</span>
-                {business.rating}/5
+                {business.rating.averageRating}/5
               </div>
             </div>
           )}
@@ -2236,11 +2471,11 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
             </div>
           </div>
           {/* Rating Badge */}
-          {business.rating && (
+          {business.rating && business.rating.averageRating > 0 && (
             <div className="absolute top-4 right-4">
               <div className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full border border-white/30 flex items-center">
                 <span className="text-yellow-300 mr-1">⭐</span>
-                {business.rating}/5
+                {business.rating.averageRating}/5
               </div>
             </div>
           )}
@@ -2286,17 +2521,17 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
             <span className="truncate">{business.location}</span>
           </div>
           
-          {business.rating && (
+          {business.rating && business.rating.averageRating > 0 && (
             <div className="flex items-center text-sm">
               <div className="w-6 h-6 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mr-3">
                 <span className="text-yellow-600 dark:text-yellow-400 text-xs">⭐</span>
               </div>
               <span className="text-gray-600 dark:text-gray-400">
-                {business.rating}/5 Rating
+                {business.rating.averageRating}/5 Rating
               </span>
-              {business.reviews && (
+              {business.rating.totalReviews > 0 && (
                 <span className="text-xs text-gray-500 dark:text-gray-500 ml-2">
-                  ({business.reviews} reviews)
+                  ({business.rating.totalReviews} reviews)
                 </span>
               )}
             </div>

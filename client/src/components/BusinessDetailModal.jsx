@@ -16,13 +16,40 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
+const BusinessDetailModal = ({ business, onClose, onBookNow, onContactBusiness }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [canReview, setCanReview] = useState(false);
   const [existingReview, setExistingReview] = useState(null);
   const [currentRating, setCurrentRating] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [businessPhotos, setBusinessPhotos] = useState([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
+
+  // Fetch photos directly from API
+  useEffect(() => {
+    const fetchBusinessPhotos = async () => {
+      if (!business?.id) return;
+      
+      try {
+        setLoadingPhotos(true);
+        console.log('[BusinessDetailModal] Fetching photos for business:', business.id);
+        
+        const response = await API.get(`/api/businesses/${business.id}/photos`);
+        console.log('[BusinessDetailModal] Photos response:', response.data);
+        
+        setBusinessPhotos(response.data.photos || []);
+        console.log('[BusinessDetailModal] Set photos state:', response.data.photos);
+      } catch (error) {
+        console.error('[BusinessDetailModal] Error fetching photos:', error);
+        setBusinessPhotos([]);
+      } finally {
+        setLoadingPhotos(false);
+      }
+    };
+
+    fetchBusinessPhotos();
+  }, [business?.id]);
 
   const checkAuthStatus = async () => {
     try {
@@ -126,23 +153,31 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
         {/* Content - Multi-column Layout */}
         <div className="p-6">
           {/* Business Photos Section - Full Width */}
-          {business.photos && business.photos.length > 0 && (
+          {loadingPhotos ? (
+            <div className="mb-8 h-72 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-400">Loading photos...</p>
+            </div>
+          ) : businessPhotos && businessPhotos.length > 0 ? (
             <div className="mb-8">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Photos</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Photos ({businessPhotos.length})</h3>
               <div className="space-y-4">
                 {/* Main Photo Display */}
                 <div className="relative">
                   <img
-                    src={business.photos[selectedPhotoIndex]?.photo_url}
+                    src={businessPhotos[selectedPhotoIndex]?.photo_url}
                     alt={`${business.name} - Photo ${selectedPhotoIndex + 1}`}
                     className="w-full h-72 object-cover rounded-xl shadow-lg"
+                    onError={(e) => {
+                      console.error('[BusinessDetailModal] Image failed to load:', businessPhotos[selectedPhotoIndex]?.photo_url);
+                      e.target.src = 'https://via.placeholder.com/800x400?text=Image+Not+Available';
+                    }}
                   />
-                  {business.photos.length > 1 && (
+                  {businessPhotos.length > 1 && (
                     <>
                       {/* Previous Button */}
                       <button
                         onClick={() => setSelectedPhotoIndex(
-                          selectedPhotoIndex === 0 ? business.photos.length - 1 : selectedPhotoIndex - 1
+                          selectedPhotoIndex === 0 ? businessPhotos.length - 1 : selectedPhotoIndex - 1
                         )}
                         className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all backdrop-blur-sm"
                       >
@@ -151,7 +186,7 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
                       {/* Next Button */}
                       <button
                         onClick={() => setSelectedPhotoIndex(
-                          selectedPhotoIndex === business.photos.length - 1 ? 0 : selectedPhotoIndex + 1
+                          selectedPhotoIndex === businessPhotos.length - 1 ? 0 : selectedPhotoIndex + 1
                         )}
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all backdrop-blur-sm"
                       >
@@ -159,16 +194,16 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
                       </button>
                       {/* Photo Counter */}
                       <div className="absolute bottom-4 right-4 bg-black bg-opacity-60 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
-                        {selectedPhotoIndex + 1} / {business.photos.length}
+                        {selectedPhotoIndex + 1} / {businessPhotos.length}
                       </div>
                     </>
                   )}
                 </div>
                 
                 {/* Photo Thumbnails */}
-                {business.photos.length > 1 && (
+                {businessPhotos.length > 1 && (
                   <div className="flex gap-3 overflow-x-auto pb-2">
-                    {business.photos.map((photo, index) => (
+                    {businessPhotos.map((photo, index) => (
                       <button
                         key={photo.id}
                         onClick={() => setSelectedPhotoIndex(index)}
@@ -189,7 +224,7 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
                 )}
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Main Content - Multi-column Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
@@ -448,6 +483,17 @@ const BusinessDetailModal = ({ business, onClose, onBookNow }) => {
             >
               Close
             </button>
+            {isAuthenticated && onContactBusiness && (
+              <button
+                onClick={() => {
+                  onContactBusiness(business.id);
+                  onClose();
+                }}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 transform hover:scale-[1.02] font-medium shadow-lg hover:shadow-xl dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700"
+              >
+                💬 Contact Business
+              </button>
+            )}
             <button
               onClick={onBookNow}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 transform hover:scale-[1.02] font-medium shadow-lg hover:shadow-xl dark:from-blue-500 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-blue-700"

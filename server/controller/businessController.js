@@ -113,9 +113,9 @@ const registerBusiness = async (req, res) => {
           const fileName = `business-${business.id}-${Date.now()}-${i}.${fileExt}`;
           const filePath = `${fileName}`;
 
-          // Upload to Supabase Storage using the 'business-photos' bucket
+          // Upload to Supabase Storage using the 'business-images' bucket
           const { data: uploadData, error: uploadError } = await req.supabase.storage
-            .from('business-photos')
+            .from('business-images')
             .upload(filePath, file.buffer, {
               contentType: file.mimetype,
               cacheControl: '3600'
@@ -128,7 +128,7 @@ const registerBusiness = async (req, res) => {
 
           // Get the public URL
           const { data: publicUrlData } = req.supabase.storage
-            .from('business-photos')
+            .from('business-images')
             .getPublicUrl(filePath);
 
           const publicUrl = publicUrlData.publicUrl;
@@ -147,7 +147,7 @@ const registerBusiness = async (req, res) => {
           if (photoError) {
             console.error('Database error for photo:', publicUrl, photoError);
             // Try to delete the uploaded file if database insert failed
-            await req.supabase.storage.from('business-photos').remove([filePath]);
+            await req.supabase.storage.from('business-images').remove([filePath]);
             continue;
           }
 
@@ -345,6 +345,21 @@ const getUserBusiness = async (req, res) => {
       }
       return res.status(400).json({ error: error.message });
     }
+
+    // Fetch business photos
+    const { data: photos, error: photosError } = await req.supabase
+      .from('business_photos')
+      .select('*')
+      .eq('business_id', business.id)
+      .order('display_order');
+
+    if (photosError) {
+      console.error('Error fetching business photos:', photosError);
+      // Continue without photos if there's an error
+    }
+
+    // Add photos to business object
+    business.photos = photos || [];
 
     res.status(200).json({ business });
   } catch (error) {
@@ -641,9 +656,9 @@ const uploadBusinessPhotos = async (req, res) => {
       const fileName = `business-${business_id}-${Date.now()}-${i}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // Upload to Supabase Storage using the 'business-photos' bucket
+      // Upload to Supabase Storage using the 'business-images' bucket
       const { data: uploadData, error: uploadError } = await req.supabase.storage
-        .from('business-photos')
+        .from('business-images')
         .upload(filePath, file.buffer, {
           contentType: file.mimetype,
           cacheControl: '3600'
@@ -656,7 +671,7 @@ const uploadBusinessPhotos = async (req, res) => {
 
       // Get the public URL
       const { data: publicUrlData } = req.supabase.storage
-        .from('business-photos')
+        .from('business-images')
         .getPublicUrl(filePath);
 
       const publicUrl = publicUrlData.publicUrl;
@@ -675,7 +690,7 @@ const uploadBusinessPhotos = async (req, res) => {
       if (photoError) {
         console.error('Database error for photo:', publicUrl, photoError);
         // Try to delete the uploaded file if database insert failed
-        await req.supabase.storage.from('business-photos').remove([filePath]);
+        await req.supabase.storage.from('business-images').remove([filePath]);
         continue;
       }
 
@@ -748,7 +763,7 @@ const deleteBusinessPhoto = async (req, res) => {
     
     // Delete from storage
     const { error: storageError } = await req.supabase.storage
-      .from('business-photos')
+      .from('business-images')
       .remove([fileName]);
     
     if (storageError) {
@@ -871,7 +886,7 @@ const deleteBusiness = async (req, res) => {
         try {
           const fileName = photo.photo_url.split('/').pop();
           await req.supabase.storage
-            .from('business-photos')
+            .from('business-images')
             .remove([fileName]);
         } catch (storageError) {
           console.warn('Failed to delete photo from storage:', storageError);

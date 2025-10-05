@@ -11,6 +11,7 @@ import BusinessDiscovery from './pages/BusinessDiscovery';
 import BookingPage from './pages/BookingPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import ProfilePage from './pages/ProfilePage';
+import MessagingPage from './pages/MessagingPage';
 import CommissionDashboard from './components/CommissionDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -75,6 +76,14 @@ function AnimatedRoutes() {
         element={
           <ProtectedRoute>
             <SubscriptionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute>
+            <MessagingPage />
           </ProtectedRoute>
         }
       />

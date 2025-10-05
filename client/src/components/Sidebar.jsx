@@ -24,6 +24,12 @@ const ModernSidebar = ({
       description: 'Find businesses'
     },
     {
+      id: 'messages',
+      label: 'Messages',
+      icon: '💬',
+      description: 'Chat with businesses'
+    },
+    {
       id: 'bookings',
       label: 'My Bookings',
       icon: '📅',
@@ -72,8 +78,12 @@ const ModernSidebar = ({
   const NavItem = ({ item }) => (
     <motion.button
       onClick={() => {
-        if (item.path) {
+        if (item.route) {
+          navigate(item.route);
+          setIsMobileOpen(false);
+        } else if (item.path) {
           navigate(item.path);
+          setIsMobileOpen(false);
         } else {
           handleNavigation(item.id);
         }
@@ -278,23 +288,7 @@ const ModernSidebar = ({
             </AnimatePresence>
           </button>
 
-          {/* Theme Toggle */}
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-2 py-2`}>
-            <AnimatePresence>
-              {!isCollapsed && (
-                <motion.span
-                  className="text-sm text-gray-600 dark:text-gray-300"
-                  variants={menuItemVariants}
-                  initial="collapsed"
-                  animate="expanded"
-                  exit="collapsed"
-                >
-                  Theme
-                </motion.span>
-              )}
-            </AnimatePresence>
-            <ThemeToggle />
-          </div>
+          
 
           {/* Logout */}
           <button

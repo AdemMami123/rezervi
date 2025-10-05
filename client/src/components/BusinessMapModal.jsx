@@ -209,10 +209,10 @@ const BusinessMapModal = ({ isOpen, onClose, businesses, onBusinessSelect, userL
                                 {business.phone}
                               </p>
                             )}
-                            {business.rating && (
+                            {business.rating && business.rating.averageRating > 0 && (
                               <p className="text-gray-500 text-sm flex items-center gap-1">
                                 <span>⭐</span>
-                                {business.rating}/5
+                                {business.rating.averageRating}/5 ({business.rating.totalReviews} reviews)
                               </p>
                             )}
                           </div>

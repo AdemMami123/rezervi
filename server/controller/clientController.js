@@ -37,6 +37,65 @@ const getBusinesses = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch businesses' });
     }
 
+    // Fetch primary photos and reviews for all businesses
+    if (businesses && businesses.length > 0) {
+      const businessIds = businesses.map(b => b.id);
+      
+      // Fetch primary photos
+      const { data: photos, error: photosError } = await (req.supabase || require('../supabaseClient'))
+        .from('business_photos')
+        .select('business_id, photo_url')
+        .in('business_id', businessIds)
+        .eq('is_primary', true);
+
+      if (!photosError && photos) {
+        // Add primary photo to each business
+        businesses.forEach(business => {
+          const primaryPhoto = photos.find(p => p.business_id === business.id);
+          business.primary_photo = primaryPhoto?.photo_url || null;
+        });
+      }
+
+      // Fetch reviews and calculate ratings
+      const { data: reviews, error: reviewsError } = await (req.supabase || require('../supabaseClient'))
+        .from('reviews')
+        .select('business_id, rating')
+        .in('business_id', businessIds);
+
+      if (!reviewsError && reviews) {
+        // Group reviews by business and calculate averages
+        const reviewsByBusiness = reviews.reduce((acc, review) => {
+          if (!acc[review.business_id]) {
+            acc[review.business_id] = [];
+          }
+          acc[review.business_id].push(review.rating);
+          return acc;
+        }, {});
+
+        // Add rating information to each business
+        businesses.forEach(business => {
+          const businessReviews = reviewsByBusiness[business.id] || [];
+          const totalReviews = businessReviews.length;
+          const averageRating = totalReviews > 0 
+            ? businessReviews.reduce((sum, rating) => sum + rating, 0) / totalReviews 
+            : 0;
+
+          business.rating = {
+            averageRating: Math.round(averageRating * 10) / 10,
+            totalReviews
+          };
+        });
+      } else {
+        // Add default rating info if reviews fetch fails
+        businesses.forEach(business => {
+          business.rating = {
+            averageRating: 0,
+            totalReviews: 0
+          };
+        });
+      }
+    }
+
     res.json(businesses);
   } catch (error) {
     console.error('Error in getBusinesses:', error);
@@ -62,6 +121,26 @@ const getBusinessDetails = async (req, res) => {
       return res.status(404).json({ error: 'Business not found' });
     }
 
+    // Fetch business photos
+    console.log(`[getBusinessDetails] Fetching photos for business ID: ${id}`);
+    const { data: photos, error: photosError } = await (req.supabase || require('../supabaseClient'))
+      .from('business_photos')
+      .select('*')
+      .eq('business_id', id)
+      .order('display_order');
+
+    if (photosError) {
+      console.error('[getBusinessDetails] Error fetching business photos:', photosError);
+      // Continue without photos if there's an error
+    }
+
+    console.log(`[getBusinessDetails] Found ${photos?.length || 0} photos for business ${id}`);
+    console.log('[getBusinessDetails] Photos:', JSON.stringify(photos, null, 2));
+
+    // Add photos to business object
+    business.photos = photos || [];
+
+    console.log(`[getBusinessDetails] Returning business with ${business.photos.length} photos`);
     res.json({ business });
   } catch (error) {
     console.error('Error in getBusinessDetails:', error);
@@ -325,9 +404,43 @@ const createBooking = async (req, res) => {
   }
 };
 
+// Get business photos (public endpoint)
+const getBusinessPhotosPublic = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const supabase = req.supabase || require('../supabaseClient');
+    
+    console.log(`[getBusinessPhotosPublic] Fetching photos for business ID: ${id}`);
+    console.log(`[getBusinessPhotosPublic] Full URL: ${req.originalUrl}`);
+    console.log(`[getBusinessPhotosPublic] Params:`, req.params);
+    
+    const { data: photos, error } = await supabase
+      .from('business_photos')
+      .select('*')
+      .eq('business_id', id)
+      .order('display_order');
+
+    if (error) {
+      console.error('[getBusinessPhotosPublic] Supabase error:', error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.log(`[getBusinessPhotosPublic] Found ${photos?.length || 0} photos`);
+    if (photos && photos.length > 0) {
+      console.log('[getBusinessPhotosPublic] First photo:', photos[0]);
+    }
+
+    res.status(200).json({ photos: photos || [] });
+  } catch (error) {
+    console.error('[getBusinessPhotosPublic] Server error:', error);
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+};
+
 module.exports = {
   getBusinesses,
   getBusinessDetails,
   getBusinessAvailability,
-  createBooking
+  createBooking,
+  getBusinessPhotosPublic
 };
