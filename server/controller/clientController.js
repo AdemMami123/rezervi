@@ -20,7 +20,7 @@ const getBusinesses = async (req, res) => {
         business_hours,
         created_at,
         user_id,
-        users!businesses_user_id_fkey(full_name)
+        users!businesses_user_id_fkey(username, email)
       `);
 
     // Filter by type if provided
@@ -111,7 +111,7 @@ const getBusinessDetails = async (req, res) => {
       .from('businesses')
       .select(`
         *,
-        users!businesses_user_id_fkey(full_name)
+        users!businesses_user_id_fkey(username, email)
       `)
       .eq('id', id)
       .single();
@@ -300,15 +300,15 @@ const createBooking = async (req, res) => {
       // Get user details from auth
       const { data: userData, error: userError } = await (req.supabase || require('../supabaseClient'))
         .from('users')
-        .select('email, full_name, phone')
+        .select('email, username, phone_number')
         .eq('id', user_id)
         .single();
 
       if (!userError && userData) {
         customerInfo = {
-          name: userData.full_name || userData.email,
+          name: userData.username || userData.email,
           email: userData.email,
-          phone: userData.phone || ''
+          phone: userData.phone_number || ''
         };
       }
     }

@@ -9,7 +9,10 @@ import {
   FiUserPlus,
   FiArrowRight,
   FiCheckCircle,
-  FiAlertCircle
+  FiAlertCircle,
+  FiUser,
+  FiPhone,
+  FiCalendar
 } from 'react-icons/fi';
 import AnimatedLayout from '../components/AnimatedLayout';
 import axios from 'axios';
@@ -19,6 +22,9 @@ function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [birthday, setBirthday] = useState('');
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -30,6 +36,43 @@ function Register() {
     e.preventDefault();
     setError(null);
     setMessage(null);
+    
+    // Validate all required fields
+    if (!username || !phoneNumber || !birthday || !email || !password || !confirmPassword) {
+      setError('All fields are required');
+      return;
+    }
+
+    // Validate username format
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,30}$/;
+    if (!usernameRegex.test(username)) {
+      setError('Username must be 3-30 characters and contain only letters, numbers, underscores, and hyphens');
+      return;
+    }
+
+    // Validate phone number
+    const phoneRegex = /^\+?[0-9\s\-\(\)]{8,15}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      setError('Please enter a valid phone number (8-15 digits)');
+      return;
+    }
+
+    // Validate birthday
+    const birthdayDate = new Date(birthday);
+    const today = new Date();
+    const minDate = new Date('1900-01-01');
+    
+    if (isNaN(birthdayDate.getTime()) || birthdayDate > today || birthdayDate < minDate) {
+      setError('Please enter a valid birthday');
+      return;
+    }
+
+    // Calculate age (must be at least 13 years old)
+    const age = Math.floor((today - birthdayDate) / (365.25 * 24 * 60 * 60 * 1000));
+    if (age < 13) {
+      setError('You must be at least 13 years old to register');
+      return;
+    }
     
     // Validate password confirmation
     if (password !== confirmPassword) {
@@ -49,6 +92,9 @@ function Register() {
       const response = await API.post('/auth/register', {
         email,
         password,
+        username,
+        phone_number: phoneNumber,
+        birthday
       });
       setMessage(response.data.message || 'Registration successful!');
       
@@ -190,11 +236,85 @@ function Register() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email Field */}
+              {/* Username Field */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
+              >
+                <label htmlFor="username" className="block text-white/90 text-sm font-medium mb-2">
+                  Username
+                </label>
+                <div className="relative">
+                  <FiUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50" />
+                  <input
+                    type="text"
+                    id="username"
+                    className="w-full bg-white/10 border border-white/20 rounded-xl py-3 pl-12 pr-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
+                    placeholder="Choose a unique username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    pattern="[a-zA-Z0-9_-]{3,30}"
+                    title="Username must be 3-30 characters and contain only letters, numbers, underscores, and hyphens"
+                    required
+                  />
+                </div>
+                <p className="text-white/50 text-xs mt-1 ml-1">3-30 characters, letters, numbers, _ and - only</p>
+              </motion.div>
+
+              {/* Phone Number Field */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.45 }}
+              >
+                <label htmlFor="phoneNumber" className="block text-white/90 text-sm font-medium mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <FiPhone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50" />
+                  <input
+                    type="tel"
+                    id="phoneNumber"
+                    className="w-full bg-white/10 border border-white/20 rounded-xl py-3 pl-12 pr-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
+                    placeholder="+1 234 567 8900"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    required
+                  />
+                </div>
+              </motion.div>
+
+              {/* Birthday Field */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <label htmlFor="birthday" className="block text-white/90 text-sm font-medium mb-2">
+                  Birthday
+                </label>
+                <div className="relative">
+                  <FiCalendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50" />
+                  <input
+                    type="date"
+                    id="birthday"
+                    className="w-full bg-white/10 border border-white/20 rounded-xl py-3 pl-12 pr-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 backdrop-blur-sm [color-scheme:dark]"
+                    value={birthday}
+                    onChange={(e) => setBirthday(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                    min="1900-01-01"
+                    required
+                  />
+                </div>
+                <p className="text-white/50 text-xs mt-1 ml-1">You must be at least 13 years old</p>
+              </motion.div>
+
+              {/* Email Field */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.55 }}
               >
                 <label htmlFor="email" className="block text-white/90 text-sm font-medium mb-2">
                   Email Address
@@ -217,7 +337,7 @@ function Register() {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.6 }}
               >
                 <label htmlFor="password" className="block text-white/90 text-sm font-medium mb-2">
                   Password
@@ -247,7 +367,7 @@ function Register() {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 }}
+                transition={{ delay: 0.65 }}
               >
                 <label htmlFor="confirmPassword" className="block text-white/90 text-sm font-medium mb-2">
                   Confirm Password

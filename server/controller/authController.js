@@ -14,16 +14,73 @@ const supabaseAdmin = createClient(
 );
 
 const register = async (req, res) => {
-  const { email, password, full_name } = req.body;
+  const { email, password, username, phone_number, birthday } = req.body;
 
   try {
+    // Validate required fields
+    if (!email || !password || !username || !phone_number || !birthday) {
+      return res.status(400).json({ 
+        error: 'All fields are required: email, password, username, phone_number, and birthday' 
+      });
+    }
+
+    // Validate username format (alphanumeric, underscore, hyphen, 3-30 characters)
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,30}$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({ 
+        error: 'Username must be 3-30 characters and contain only letters, numbers, underscores, and hyphens' 
+      });
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^\+?[0-9\s\-\(\)]{8,15}$/;
+    if (!phoneRegex.test(phone_number)) {
+      return res.status(400).json({ 
+        error: 'Please enter a valid phone number (8-15 digits)' 
+      });
+    }
+
+    // Validate birthday
+    const birthdayDate = new Date(birthday);
+    const today = new Date();
+    const minDate = new Date('1900-01-01');
+    
+    if (isNaN(birthdayDate.getTime()) || birthdayDate > today || birthdayDate < minDate) {
+      return res.status(400).json({ 
+        error: 'Please enter a valid birthday (must be in the past)' 
+      });
+    }
+
+    // Calculate age (must be at least 13 years old)
+    const age = Math.floor((today - birthdayDate) / (365.25 * 24 * 60 * 60 * 1000));
+    if (age < 13) {
+      return res.status(400).json({ 
+        error: 'You must be at least 13 years old to register' 
+      });
+    }
+
+    // Check if username already exists
+    const { data: existingUser, error: checkError } = await supabaseAdmin
+      .from('users')
+      .select('username')
+      .eq('username', username)
+      .single();
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        error: 'Username is already taken. Please choose another one.' 
+      });
+    }
+
     // Use admin client to create user without email confirmation
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true, // Skip email confirmation - user is auto-confirmed
       user_metadata: {
-        full_name: full_name || email
+        username: username,
+        phone_number: phone_number,
+        birthday: birthday
       }
     });
 
@@ -34,7 +91,14 @@ const register = async (req, res) => {
     // Insert user into public.users table using admin client to bypass RLS
     const { data: publicUserData, error: publicUserError } = await supabaseAdmin
       .from('users')
-      .insert([{ id: user_id, role: 'client', full_name: full_name || email }])
+      .insert([{ 
+        id: user_id, 
+        role: 'client',
+        email: email,
+        username: username,
+        phone_number: phone_number,
+        birthday: birthday
+      }])
       .select();
 
     if (publicUserError) {
@@ -68,17 +132,16 @@ const login = async (req, res) => {
 
     const user_id = data.user.id;
 
-    // Upsert user into public.users table using admin client to bypass RLS
-    const { error: upsertError } = await supabaseAdmin
+    // Check if user exists in public.users table
+    const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
-      .upsert(
-        { id: user_id, role: 'client', full_name: data.user.email },
-        { onConflict: 'id' }
-      );
+      .select('id, role, email, username')
+      .eq('id', user_id)
+      .single();
 
-    if (upsertError) {
-      console.error('Error upserting into public.users on login:', upsertError);
-      return res.status(500).json({ error: 'Login failed: could not sync user profile.' });
+    if (userError || !userData) {
+      console.error('Error fetching user from public.users on login:', userError);
+      return res.status(500).json({ error: 'Login failed: user profile not found. Please register first.' });
     }
 
     // Set HttpOnly cookie with the access token
@@ -125,7 +188,7 @@ const getMe = async (req, res) => {
     console.log('Controller: Attempting to fetch user from public.users for ID:', userId);
     const { data: userData, error } = await req.supabase // Use req.supabase
       .from('users')
-      .select('id, full_name, role, profile_picture_url')
+      .select('id, email, username, phone_number, birthday, role, profile_picture_url, created_at')
       .eq('id', userId)
       .single();
 
@@ -134,13 +197,16 @@ const getMe = async (req, res) => {
       return res.status(404).json({ message: 'User profile not found.' });
     }
 
-    console.log('Controller: Successfully fetched user profile:', userData.full_name);
+    console.log('Controller: Successfully fetched user profile:', userData.username);
     res.status(200).json({
       id: userData.id,
-      email: req.user.email,
-      full_name: userData.full_name,
+      email: userData.email,
+      username: userData.username,
+      phone_number: userData.phone_number,
+      birthday: userData.birthday,
       role: userData.role,
       profile_picture_url: userData.profile_picture_url,
+      created_at: userData.created_at,
     });
   } catch (error) {
     console.error('Controller: Unexpected error in getMe:', error);
@@ -158,13 +224,59 @@ const updateProfile = async (req, res) => {
   }
 
   const userId = req.user.id;
-  const { full_name } = req.body;
+  const { username, phone_number, birthday } = req.body;
   
-  console.log(`Attempting to update user ${userId} with full_name: ${full_name}`);
+  console.log(`Attempting to update user ${userId}`);
   
-  if (!full_name) {
-    console.error('Missing full_name in request body');
-    return res.status(400).json({ error: 'Full name is required' });
+  // Build update object with only provided fields
+  const updateData = {};
+  if (username) updateData.username = username;
+  if (phone_number) updateData.phone_number = phone_number;
+  if (birthday) updateData.birthday = birthday;
+  
+  if (Object.keys(updateData).length === 0) {
+    console.error('No fields to update');
+    return res.status(400).json({ error: 'At least one field is required to update' });
+  }
+  
+  // Validate username format if provided
+  if (username) {
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,30}$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({ 
+        error: 'Username must be 3-30 characters and contain only letters, numbers, underscores, and hyphens' 
+      });
+    }
+  }
+  
+  // Validate phone number format if provided
+  if (phone_number) {
+    const phoneRegex = /^\+?[0-9\s\-\(\)]{8,15}$/;
+    if (!phoneRegex.test(phone_number)) {
+      return res.status(400).json({ 
+        error: 'Please enter a valid phone number (8-15 digits)' 
+      });
+    }
+  }
+  
+  // Validate birthday if provided
+  if (birthday) {
+    const birthdayDate = new Date(birthday);
+    const today = new Date();
+    const minDate = new Date('1900-01-01');
+    
+    if (isNaN(birthdayDate.getTime()) || birthdayDate > today || birthdayDate < minDate) {
+      return res.status(400).json({ 
+        error: 'Please enter a valid birthday (must be in the past)' 
+      });
+    }
+    
+    const age = Math.floor((today - birthdayDate) / (365.25 * 24 * 60 * 60 * 1000));
+    if (age < 13) {
+      return res.status(400).json({ 
+        error: 'You must be at least 13 years old' 
+      });
+    }
   }
   
   try {
@@ -172,9 +284,7 @@ const updateProfile = async (req, res) => {
     // Use the admin client (supabaseAdmin) to bypass RLS
     const { data, error } = await supabaseAdmin
       .from('users')
-      .update({ 
-        full_name
-      })
+      .update(updateData)
       .eq('id', userId)
       .select();
 

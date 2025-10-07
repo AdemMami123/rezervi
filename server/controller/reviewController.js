@@ -68,7 +68,7 @@ const submitReview = async (req, res) => {
         rating: parseInt(rating),
         comment: comment.trim()
       })
-      .select('*, users(full_name)')
+      .select('*, users(username)')
       .single();
 
     if (insertError) {
@@ -106,7 +106,7 @@ const getBusinessReviews = async (req, res) => {
         comment,
         created_at,
         client_id,
-        users(full_name)
+        users(username)
       `)
       .eq('business_id', business_id)
       .order('created_at', { ascending: false })
@@ -272,7 +272,7 @@ const updateReview = async (req, res) => {
       .from('reviews')
       .update(updateData)
       .eq('id', review_id)
-      .select('*, users(full_name)')
+      .select('*, users(username)')
       .single();
 
     if (updateError) {

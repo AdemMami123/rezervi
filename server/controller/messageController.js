@@ -103,12 +103,12 @@ const getUserConversations = async (req, res) => {
           // User is business owner, other is customer
           const { data: customerData } = await req.supabase
             .from('users')
-            .select('id, full_name, email')
+            .select('id, username, email')
             .eq('id', conv.customer_id)
             .single();
           
           otherParticipant = { 
-            name: customerData?.full_name || customerData?.email || 'Customer', 
+            name: customerData?.username || customerData?.email || 'Customer', 
             type: 'customer', 
             user_id: conv.customer_id 
           };
@@ -198,7 +198,7 @@ const getConversationMessages = async (req, res) => {
         try {
           const { data: sender, error: senderError } = await req.supabase
             .from('users')
-            .select('id, full_name, email')
+            .select('id, username, email')
             .eq('id', msg.sender_id)
             .single();
           
@@ -210,7 +210,7 @@ const getConversationMessages = async (req, res) => {
             ...msg,
             sender: {
               id: sender?.id || msg.sender_id,
-              full_name: sender?.full_name || sender?.email || 'User'
+              username: sender?.username || sender?.email || 'User'
             }
           };
         } catch (err) {
@@ -220,7 +220,7 @@ const getConversationMessages = async (req, res) => {
             ...msg,
             sender: {
               id: msg.sender_id,
-              full_name: 'User'
+              username: 'User'
             }
           };
         }
@@ -379,7 +379,7 @@ const sendMessage = async (req, res) => {
     // Fetch sender information
     const { data: sender, error: senderError } = await req.supabase
       .from('users')
-      .select('id, full_name, email')
+      .select('id, username, email')
       .eq('id', userId)
       .single();
 
@@ -391,7 +391,7 @@ const sendMessage = async (req, res) => {
       ...message,
       sender: {
         id: sender?.id || userId,
-        full_name: sender?.full_name || sender?.email || 'User'
+        username: sender?.username || sender?.email || 'User'
       }
     };
 

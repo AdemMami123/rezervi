@@ -18,14 +18,14 @@ const API_BASE_URL = getAPIBaseURL();
 
 export const authAPI = {
   // Register new user
-  register: async (email, password, full_name) => {
+  register: async (email, password, username, phone_number, birthday) => {
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       credentials: 'include', // Important: include cookies
-      body: JSON.stringify({ email, password, full_name }),
+      body: JSON.stringify({ email, password, username, phone_number, birthday }),
     });
 
     const data = await response.json();

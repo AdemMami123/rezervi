@@ -181,7 +181,8 @@ const getBusinessReservations = async (req, res) => {
       .select(`
         *,
         users!reservations_client_id_fkey(
-          full_name
+          username,
+          email
         )
       `)
       .eq('business_id', business_id)
@@ -195,7 +196,7 @@ const getBusinessReservations = async (req, res) => {
     // Transform data to include booking details with correct field names
     const transformedReservations = reservations.map(reservation => ({
       ...reservation,
-      customer_name: reservation.customer_name || reservation.users?.full_name || 'Unknown',
+      customer_name: reservation.customer_name || reservation.users?.username || reservation.users?.email || 'Unknown',
       booking_date: reservation.date,
       booking_time: reservation.time
     }));
@@ -447,7 +448,7 @@ const acceptReservation = async (req, res) => {
     // First verify the reservation belongs to the business and get details
     const { data: reservation, error: fetchError } = await req.supabase
       .from('reservations')
-      .select('*, users!reservations_client_id_fkey(full_name)')
+      .select('*, users!reservations_client_id_fkey(username)')
       .eq('id', id)
       .eq('business_id', business_id)
       .single();
@@ -488,7 +489,7 @@ const acceptReservation = async (req, res) => {
       return res.status(403).json({ error: 'Unable to update reservation - permission denied' });
     }
 
-    console.log(`Reservation ${id} ACCEPTED by business owner ${user_id} for customer: ${reservation.users?.full_name}`);
+    console.log(`Reservation ${id} ACCEPTED by business owner ${user_id} for customer: ${reservation.users?.username}`);
 
     res.status(200).json({ 
       message: 'Reservation accepted successfully', 
@@ -516,7 +517,7 @@ const declineReservation = async (req, res) => {
     // First verify the reservation belongs to the business and get details
     const { data: reservation, error: fetchError } = await req.supabase
       .from('reservations')
-      .select('*, users!reservations_client_id_fkey(full_name)')
+      .select('*, users!reservations_client_id_fkey(username)')
       .eq('id', id)
       .eq('business_id', business_id)
       .single();
@@ -562,7 +563,7 @@ const declineReservation = async (req, res) => {
       return res.status(403).json({ error: 'Unable to update reservation - permission denied' });
     }
 
-    console.log(`Reservation ${id} DECLINED by business owner ${user_id} for customer: ${reservation.users?.full_name}${reason ? ` (Reason: ${reason})` : ''}`);
+    console.log(`Reservation ${id} DECLINED by business owner ${user_id} for customer: ${reservation.users?.username}${reason ? ` (Reason: ${reason})` : ''}`);
 
     res.status(200).json({ 
       message: 'Reservation declined successfully', 

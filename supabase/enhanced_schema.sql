@@ -6,8 +6,14 @@ create extension if not exists "uuid-ossp";
 create table if not exists users (
   id uuid primary key references auth.users(id) on delete cascade,
   role text check (role in ('client', 'business')) not null,
-  full_name text not null,
-  created_at timestamp default now()
+  email text unique not null,
+  username text unique not null,
+  phone_number text not null,
+  birthday date not null,
+  profile_picture_url text,
+  created_at timestamp default now(),
+  constraint phone_number_format check (phone_number ~ '^\+?[0-9\s\-\(\)]+$'),
+  constraint valid_birthday check (birthday <= CURRENT_DATE AND birthday >= '1900-01-01')
 );
 
 -- 2. BUSINESSES TABLE (Enhanced)

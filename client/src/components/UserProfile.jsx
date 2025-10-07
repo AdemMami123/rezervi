@@ -11,7 +11,9 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [profileData, setProfileData] = useState({
-    full_name: user?.full_name || '',
+    username: user?.username || '',
+    phone_number: user?.phone_number || '',
+    birthday: user?.birthday || '',
   });
   const [previewUrl, setPreviewUrl] = useState(user?.profile_picture_url || null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -21,7 +23,9 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
   useEffect(() => {
     if (user) {
       setProfileData({
-        full_name: user.full_name || '',
+        username: user.username || '',
+        phone_number: user.phone_number || '',
+        birthday: user.birthday || '',
       });
       setPreviewUrl(user.profile_picture_url || null);
     }
@@ -61,13 +65,21 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
     setError(null);
 
     try {
-      if (!profileData.full_name || profileData.full_name.trim() === '') {
-        throw new Error('Full name is required');
+      const updates = {};
+      
+      if (profileData.username && profileData.username.trim() !== user?.username) {
+        updates.username = profileData.username.trim();
+      }
+      if (profileData.phone_number && profileData.phone_number.trim() !== user?.phone_number) {
+        updates.phone_number = profileData.phone_number.trim();
+      }
+      if (profileData.birthday && profileData.birthday !== user?.birthday) {
+        updates.birthday = profileData.birthday;
       }
 
-      await authAPI.updateProfile({
-        full_name: profileData.full_name.trim()
-      });
+      if (Object.keys(updates).length > 0) {
+        await authAPI.updateProfile(updates);
+      }
       
       if (fileInputRef.current && fileInputRef.current.files[0]) {
         await authAPI.uploadProfilePicture(fileInputRef.current.files[0]);
@@ -88,7 +100,9 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
 
   const handleCancel = () => {
     setProfileData({
-      full_name: user?.full_name || '',
+      username: user?.username || '',
+      phone_number: user?.phone_number || '',
+      birthday: user?.birthday || '',
     });
     setPreviewUrl(user?.profile_picture_url || null);
     setIsEditing(false);
@@ -184,7 +198,7 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
                 />
               )}
               <h3 className="text-xl font-semibold text-gray-800 dark:text-white mt-2">
-                {user?.full_name || 'User'}
+                {user?.username || 'User'}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
             </div>
@@ -193,20 +207,21 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
             <div className="md:col-span-2 space-y-6">
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <FiUser className="mr-2" /> Full Name
+                  <FiUser className="mr-2" /> Username
                 </label>
                 {isEditing ? (
                   <input
                     type="text"
-                    name="full_name"
-                    value={profileData.full_name}
+                    name="username"
+                    value={profileData.username}
                     onChange={handleInputChange}
                     className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    required
+                    pattern="^[a-zA-Z0-9_-]{3,30}$"
+                    title="Username must be 3-30 characters, alphanumeric, underscore or hyphen"
                   />
                 ) : (
                   <p className="py-3 px-4 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-800 dark:text-gray-200">
-                    {user?.full_name || 'Not provided'}
+                    {user?.username || 'Not provided'}
                   </p>
                 )}
               </div>
@@ -218,6 +233,46 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
                 <p className="py-3 px-4 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-800 dark:text-gray-200">
                   {user?.email}
                 </p>
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <FiUser className="mr-2" /> Phone Number
+                </label>
+                {isEditing ? (
+                  <input
+                    type="tel"
+                    name="phone_number"
+                    value={profileData.phone_number}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    pattern="^\+?[0-9\s\-\(\)]{8,15}$"
+                    title="Phone number must be 8-15 digits"
+                  />
+                ) : (
+                  <p className="py-3 px-4 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-800 dark:text-gray-200">
+                    {user?.phone_number || 'Not provided'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <FiCalendar className="mr-2" /> Birthday
+                </label>
+                {isEditing ? (
+                  <input
+                    type="date"
+                    name="birthday"
+                    value={profileData.birthday}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                ) : (
+                  <p className="py-3 px-4 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-800 dark:text-gray-200">
+                    {user?.birthday ? new Date(user.birthday).toLocaleDateString() : 'Not provided'}
+                  </p>
+                )}
               </div>
 
               <div>

@@ -5,7 +5,9 @@ import { authAPI } from '../api/auth';
 function AuthForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [birthday, setBirthday] = useState('');
   const [mode, setMode] = useState('login'); // 'login' or 'register'
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +25,7 @@ function AuthForm() {
         setUser(result.user);
         console.log('Login successful:', result);
       } else {
-        result = await authAPI.register(email, password, fullName);
+        result = await authAPI.register(email, password, username, phoneNumber, birthday);
         console.log('Registration successful:', result);
         alert('Registration successful! Please check your email for verification.');
       }
@@ -41,7 +43,9 @@ function AuthForm() {
       setUser(null);
       setEmail('');
       setPassword('');
-      setFullName('');
+      setUsername('');
+      setPhoneNumber('');
+      setBirthday('');
       console.log('Logout successful');
     } catch (err) {
       setError(err.message);
@@ -121,26 +125,72 @@ function AuthForm() {
         }}
       >
         {mode === 'register' && (
-          <motion.div
-            variants={{
-              hidden: { opacity: 0, x: -20 },
-              visible: { opacity: 1, x: 0, transition: { duration: 0.3 } }
-            }}
-          >
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
-            </label>
-            <motion.input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Enter your full name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required={mode === 'register'}
-              whileFocus={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            />
-          </motion.div>
+          <>
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, x: -20 },
+                visible: { opacity: 1, x: 0, transition: { duration: 0.3 } }
+              }}
+            >
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Username
+              </label>
+              <motion.input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Choose a unique username"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required={mode === 'register'}
+                pattern="[a-zA-Z0-9_-]{3,30}"
+                whileFocus={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              />
+            </motion.div>
+
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, x: -20 },
+                visible: { opacity: 1, x: 0, transition: { duration: 0.3 } }
+              }}
+            >
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number
+              </label>
+              <motion.input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+1 234 567 8900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required={mode === 'register'}
+                whileFocus={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              />
+            </motion.div>
+
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, x: -20 },
+                visible: { opacity: 1, x: 0, transition: { duration: 0.3 } }
+              }}
+            >
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Birthday
+              </label>
+              <motion.input
+                type="date"
+                value={birthday}
+                onChange={(e) => setBirthday(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required={mode === 'register'}
+                max={new Date().toISOString().split('T')[0]}
+                min="1900-01-01"
+                whileFocus={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              />
+            </motion.div>
+          </>
         )}
         
         <motion.div

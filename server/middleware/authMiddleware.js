@@ -35,21 +35,19 @@ const protect = async (req, res, next) => {
 
     const user_id = authData.user.id;
 
-    // PROACTIVE: Ensure user exists in public.users table
-    console.log('Middleware: Checking/Upserting user into public.users with ID:', user_id);
+    // Check if user exists in public.users table (don't create, just verify)
+    console.log('Middleware: Checking user exists in public.users with ID:', user_id);
     const { data: publicUser, error: publicUserError } = await supabase
       .from('users')
-      .upsert(
-        { id: user_id, role: 'client', full_name: authData.user.email },
-        { onConflict: 'id' }
-      )
-      .select();
+      .select('id, role, email, username')
+      .eq('id', user_id)
+      .single();
 
-    if (publicUserError) {
-      console.error('Middleware: Error upserting into public.users:', publicUserError);
-      return res.status(500).json({ message: 'Server error during user profile synchronization.' });
+    if (publicUserError || !publicUser) {
+      console.error('Middleware: User not found in public.users:', publicUserError);
+      return res.status(401).json({ message: 'User profile not found. Please complete registration.' });
     }
-    console.log('Middleware: Public user profile ensured/updated.', publicUser[0]);
+    console.log('Middleware: Public user profile verified.', publicUser);
 
     req.user = authData.user; // User data from Supabase Auth
     // Create and attach a session-aware Supabase client to the request
@@ -108,17 +106,15 @@ const optionalAuth = async (req, res, next) => {
     // Valid authentication found
     const user_id = authData.user.id;
 
-    // Ensure user exists in public.users table
+    // Check if user exists in public.users table
     const { data: publicUser, error: publicUserError } = await supabase
       .from('users')
-      .upsert(
-        { id: user_id, role: 'client', full_name: authData.user.email },
-        { onConflict: 'id' }
-      )
-      .select();
+      .select('id, role, email, username')
+      .eq('id', user_id)
+      .single();
 
-    if (publicUserError) {
-      console.error('Optional Auth Middleware: Error with user profile:', publicUserError);
+    if (publicUserError || !publicUser) {
+      console.error('Optional Auth Middleware: User not found in public.users:', publicUserError);
       req.supabase = createClient(
         process.env.SUPABASE_URL,
         process.env.SUPABASE_ANON_KEY
