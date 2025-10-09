@@ -154,60 +154,62 @@ const BusinessDetailModal = ({ business, onClose, onBookNow, onContactBusiness }
         <div className="p-6">
           {/* Business Photos Section - Full Width */}
           {loadingPhotos ? (
-            <div className="mb-8 h-72 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center">
-              <p className="text-gray-500 dark:text-gray-400">Loading photos...</p>
+            <div className="mb-6 w-full bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center" style={{ paddingBottom: '40%', position: 'relative' }}>
+              <p className="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400">Loading photos...</p>
             </div>
           ) : businessPhotos && businessPhotos.length > 0 ? (
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Photos ({businessPhotos.length})</h3>
-              <div className="space-y-4">
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 dark:text-white">Photos ({businessPhotos.length})</h3>
+              <div className="space-y-3">
                 {/* Main Photo Display */}
-                <div className="relative">
-                  <img
-                    src={businessPhotos[selectedPhotoIndex]?.photo_url}
-                    alt={`${business.name} - Photo ${selectedPhotoIndex + 1}`}
-                    className="w-full h-72 object-cover rounded-xl shadow-lg"
-                    onError={(e) => {
-                      console.error('[BusinessDetailModal] Image failed to load:', businessPhotos[selectedPhotoIndex]?.photo_url);
-                      e.target.src = 'https://via.placeholder.com/800x400?text=Image+Not+Available';
-                    }}
-                  />
-                  {businessPhotos.length > 1 && (
-                    <>
-                      {/* Previous Button */}
-                      <button
-                        onClick={() => setSelectedPhotoIndex(
-                          selectedPhotoIndex === 0 ? businessPhotos.length - 1 : selectedPhotoIndex - 1
-                        )}
-                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all backdrop-blur-sm"
-                      >
-                        ‹
-                      </button>
-                      {/* Next Button */}
-                      <button
-                        onClick={() => setSelectedPhotoIndex(
-                          selectedPhotoIndex === businessPhotos.length - 1 ? 0 : selectedPhotoIndex + 1
-                        )}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all backdrop-blur-sm"
-                      >
-                        ›
-                      </button>
-                      {/* Photo Counter */}
-                      <div className="absolute bottom-4 right-4 bg-black bg-opacity-60 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
-                        {selectedPhotoIndex + 1} / {businessPhotos.length}
-                      </div>
-                    </>
-                  )}
+                <div className="relative w-full overflow-hidden rounded-xl shadow-lg bg-gray-100 dark:bg-gray-700">
+                  <div className="relative w-full" style={{ paddingBottom: '40%' }}> {/* 5:2 Aspect Ratio - Reduced height */}
+                    <img
+                      src={businessPhotos[selectedPhotoIndex]?.photo_url}
+                      alt={`${business.name} - Photo ${selectedPhotoIndex + 1}`}
+                      className="absolute top-0 left-0 w-full h-full object-cover object-center"
+                      onError={(e) => {
+                        console.error('[BusinessDetailModal] Image failed to load:', businessPhotos[selectedPhotoIndex]?.photo_url);
+                        e.target.src = 'https://via.placeholder.com/800x400?text=Image+Not+Available';
+                      }}
+                    />
+                    {businessPhotos.length > 1 && (
+                      <>
+                        {/* Previous Button */}
+                        <button
+                          onClick={() => setSelectedPhotoIndex(
+                            selectedPhotoIndex === 0 ? businessPhotos.length - 1 : selectedPhotoIndex - 1
+                          )}
+                          className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-70 transition-all backdrop-blur-sm z-10 text-xl"
+                        >
+                          ‹
+                        </button>
+                        {/* Next Button */}
+                        <button
+                          onClick={() => setSelectedPhotoIndex(
+                            selectedPhotoIndex === businessPhotos.length - 1 ? 0 : selectedPhotoIndex + 1
+                          )}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-70 transition-all backdrop-blur-sm z-10 text-xl"
+                        >
+                          ›
+                        </button>
+                        {/* Photo Counter */}
+                        <div className="absolute bottom-3 right-3 bg-black bg-opacity-60 text-white px-3 py-1.5 rounded-full text-xs backdrop-blur-sm z-10">
+                          {selectedPhotoIndex + 1} / {businessPhotos.length}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Photo Thumbnails */}
                 {businessPhotos.length > 1 && (
-                  <div className="flex gap-3 overflow-x-auto pb-2">
+                  <div className="flex gap-2 overflow-x-auto pb-2">
                     {businessPhotos.map((photo, index) => (
                       <button
                         key={photo.id}
                         onClick={() => setSelectedPhotoIndex(index)}
-                        className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-3 transition-all ${
+                        className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
                           selectedPhotoIndex === index 
                             ? 'border-blue-500 ring-2 ring-blue-200 shadow-lg' 
                             : 'border-gray-300 hover:border-gray-400 hover:shadow-md'

@@ -12,7 +12,8 @@ import {
   FiAlertCircle
 } from 'react-icons/fi';
 import AnimatedLayout from '../components/AnimatedLayout';
-import API from '../utils/api'; // Import the custom API instance
+import API from '../utils/api';
+import { cn } from '../utils/cn';
 
 function Login() {
   const [email, setEmail] = useState('');

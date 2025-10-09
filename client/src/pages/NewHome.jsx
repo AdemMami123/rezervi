@@ -24,6 +24,9 @@ import useMessaging from '../hooks/useMessaging';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI } from '../api/auth';
 import toast from 'react-hot-toast';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 
 function Home() {
   const [user, setUser] = useState(null);
@@ -2420,7 +2423,7 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
 
   return (
     <motion.div 
-      className="group relative bg-white dark:bg-gray-800 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-700 h-full flex flex-col overflow-hidden backdrop-blur-sm"
+      className="h-full"
       whileHover={{ 
         scale: 1.03,
         y: -8,
@@ -2431,8 +2434,9 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      {/* Animated background gradient */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500"></div>
+      <Card className="group relative h-full flex flex-col overflow-hidden shadow-lg hover:shadow-2xl border-2 transition-all duration-500 backdrop-blur-sm">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500"></div>
       
       {/* Business Photo or Gradient Header */}
       {business.primary_photo ? (
@@ -2446,18 +2450,18 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
           {/* Floating Business Type Badge */}
           <div className="absolute top-4 left-4">
-            <div className={`px-3 py-1.5 bg-gradient-to-r ${getBusinessTypeColor(business.type)} text-white text-xs font-semibold rounded-full shadow-lg backdrop-blur-sm border border-white/20`}>
+            <Badge className={`bg-gradient-to-r ${getBusinessTypeColor(business.type)} text-white font-semibold shadow-lg backdrop-blur-sm border border-white/20 hover:scale-105 transition-transform`}>
               <span className="mr-1">{getBusinessIcon(business.type)}</span>
               {business.type.replace('_', ' ').toUpperCase()}
-            </div>
+            </Badge>
           </div>
           {/* Rating Badge */}
           {business.rating && business.rating.averageRating > 0 && (
             <div className="absolute top-4 right-4">
-              <div className="px-2 py-1 bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white text-xs font-bold rounded-full shadow-lg backdrop-blur-sm flex items-center">
+              <Badge variant="secondary" className="shadow-lg backdrop-blur-sm flex items-center">
                 <span className="text-yellow-400 mr-1">⭐</span>
                 {business.rating.averageRating}/5
-              </div>
+              </Badge>
             </div>
           )}
         </div>
@@ -2466,17 +2470,17 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
           <div className="text-white text-6xl opacity-90">{getBusinessIcon(business.type)}</div>
           {/* Floating Business Type Badge */}
           <div className="absolute top-4 left-4">
-            <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold rounded-full border border-white/30">
+            <Badge className="bg-white/20 backdrop-blur-sm text-white font-semibold border border-white/30 hover:bg-white/30 transition-colors">
               {business.type.replace('_', ' ').toUpperCase()}
-            </div>
+            </Badge>
           </div>
           {/* Rating Badge */}
           {business.rating && business.rating.averageRating > 0 && (
             <div className="absolute top-4 right-4">
-              <div className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full border border-white/30 flex items-center">
+              <Badge className="bg-white/20 backdrop-blur-sm text-white font-bold border border-white/30 hover:bg-white/30 transition-colors flex items-center">
                 <span className="text-yellow-300 mr-1">⭐</span>
                 {business.rating.averageRating}/5
-              </div>
+              </Badge>
             </div>
           )}
           {/* Decorative Pattern */}
@@ -2489,11 +2493,11 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
         </div>
       )}
       
-      <div className="p-6 flex flex-col flex-grow relative">
+      <CardContent className="flex flex-col flex-grow relative">
         {/* Business Header */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+            <h3 className="text-xl font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
               {business.name}
             </h3>
             {!business.primary_photo && (
@@ -2549,36 +2553,32 @@ const BusinessCard = ({ business, onSelect, onBookNow }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 mt-auto">
-          <motion.button
+        <div className="flex gap-2 mt-auto w-full">
+          <Button
+            variant="outline"
             onClick={() => onSelect(business)}
-            className="flex-1 px-4 py-3 text-blue-600 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-400 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-300 text-sm font-semibold flex items-center justify-center space-x-2 group/btn"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            className="flex-1 text-xs font-semibold hover:scale-105 transition-transform gap-1.5 px-3 py-2 h-auto whitespace-nowrap"
           >
             <span>👁️</span>
-            <span>View Details</span>
-          </motion.button>
+            <span className="hidden sm:inline">View Details</span>
+            <span className="sm:hidden">View</span>
+          </Button>
           
-          <motion.button
+          <Button
             onClick={() => onBookNow(business)}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white rounded-2xl transition-all duration-300 text-sm font-semibold shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group/btn"
-            whileHover={{ 
-              scale: 1.02,
-              boxShadow: "0 10px 25px -5px rgba(59, 130, 246, 0.4)"
-            }}
-            whileTap={{ scale: 0.98 }}
+            className="flex-1 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white text-xs font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all gap-1.5 px-3 py-2 h-auto whitespace-nowrap"
           >
             <span>📅</span>
             <span>Book Now</span>
-          </motion.button>
+          </Button>
         </div>
-      </div>
+      </CardContent>
       
       {/* Subtle shine effect on hover */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000 ease-out" />
       </div>
+    </Card>
     </motion.div>
   );
 };

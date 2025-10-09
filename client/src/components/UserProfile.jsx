@@ -5,6 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { FiUser, FiMail, FiCalendar, FiEdit, FiSave, FiXCircle, FiCamera } from 'react-icons/fi';
 import BusinessDeleteModal from './BusinessDeleteModal';
 import API from '../utils/api';
+import { cn } from '../utils/cn';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { Badge } from './ui/badge';
 
 const UserProfile = ({ user, onProfileUpdate, business }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -138,27 +145,32 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
       exit={{ opacity: 0, y: -20 }}
       className="w-full max-w-4xl mx-auto"
     >
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
-        <div className="p-6 sm:p-8">
+      <Card className="shadow-2xl border-2">
+        <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
           <div className="flex justify-between items-start">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-              Profile Information
-            </h2>
+            <div>
+              <CardTitle className="text-3xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Profile Information
+              </CardTitle>
+              <CardDescription className="text-base mt-2">
+                Manage your account details and preferences
+              </CardDescription>
+            </div>
             {!isEditing && (
-              <button
+              <Button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
                 <FiEdit className="mr-2" />
                 Edit Profile
-              </button>
+              </Button>
             )}
           </div>
-        </div>
+        </CardHeader>
 
-        <div className="border-t border-gray-200 dark:border-gray-700 p-6 sm:p-8">
+        <CardContent className="p-6 sm:p-8">
           {error && (
-            <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-md">
+            <div className="mb-6 p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
               {error}
             </div>
           )}
@@ -167,23 +179,18 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
             {/* Profile Picture Section */}
             <div className="md:col-span-1 flex flex-col items-center">
               <div 
-                className="relative w-40 h-40 mb-4 rounded-full overflow-hidden border-4 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 group"
+                className="relative mb-4 group"
                 onClick={isEditing ? triggerFileInput : undefined}
                 style={{ cursor: isEditing ? 'pointer' : 'default' }}
               >
-                {previewUrl ? (
-                  <img 
-                    src={previewUrl} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-6xl">
+                <Avatar className="w-40 h-40 border-4 border-primary/20 shadow-2xl ring-4 ring-background">
+                  <AvatarImage src={previewUrl} alt={user?.username} className="object-cover" />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-5xl">
                     <FiUser />
-                  </div>
-                )}
+                  </AvatarFallback>
+                </Avatar>
                 {isEditing && (
-                  <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <FiCamera className="text-white text-3xl" />
                   </div>
                 )}
@@ -200,115 +207,116 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
               <h3 className="text-xl font-semibold text-gray-800 dark:text-white mt-2">
                 {user?.username || 'User'}
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <Badge variant="secondary" className="mt-2">
+                <FiCalendar className="mr-1 h-3 w-3" />
+                Member since {memberSince}
+              </Badge>
             </div>
 
             {/* User Details Section */}
             <div className="md:col-span-2 space-y-6">
               <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Label className="flex items-center mb-2">
                   <FiUser className="mr-2" /> Username
-                </label>
+                </Label>
                 {isEditing ? (
-                  <input
+                  <Input
                     type="text"
                     name="username"
                     value={profileData.username}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     pattern="^[a-zA-Z0-9_-]{3,30}$"
                     title="Username must be 3-30 characters, alphanumeric, underscore or hyphen"
                   />
                 ) : (
-                  <p className="py-3 px-4 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-800 dark:text-gray-200">
+                  <p className="py-3 px-4 bg-muted rounded-md text-foreground">
                     {user?.username || 'Not provided'}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Label className="flex items-center mb-2">
                   <FiMail className="mr-2" /> Email Address
-                </label>
-                <p className="py-3 px-4 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-800 dark:text-gray-200">
+                </Label>
+                <p className="py-3 px-4 bg-muted rounded-md text-foreground">
                   {user?.email}
                 </p>
               </div>
 
               <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Label className="flex items-center mb-2">
                   <FiUser className="mr-2" /> Phone Number
-                </label>
+                </Label>
                 {isEditing ? (
-                  <input
+                  <Input
                     type="tel"
                     name="phone_number"
                     value={profileData.phone_number}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     pattern="^\+?[0-9\s\-\(\)]{8,15}$"
                     title="Phone number must be 8-15 digits"
                   />
                 ) : (
-                  <p className="py-3 px-4 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-800 dark:text-gray-200">
+                  <p className="py-3 px-4 bg-muted rounded-md text-foreground">
                     {user?.phone_number || 'Not provided'}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Label className="flex items-center mb-2">
                   <FiCalendar className="mr-2" /> Birthday
-                </label>
+                </Label>
                 {isEditing ? (
-                  <input
+                  <Input
                     type="date"
                     name="birthday"
                     value={profileData.birthday}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 ) : (
-                  <p className="py-3 px-4 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-800 dark:text-gray-200">
+                  <p className="py-3 px-4 bg-muted rounded-md text-foreground">
                     {user?.birthday ? new Date(user.birthday).toLocaleDateString() : 'Not provided'}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Label className="flex items-center mb-2">
                   <FiCalendar className="mr-2" /> Member Since
-                </label>
-                <p className="py-3 px-4 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-800 dark:text-gray-200">
+                </Label>
+                <p className="py-3 px-4 bg-muted rounded-md text-foreground">
                   {memberSince}
                 </p>
               </div>
 
               {isEditing && (
                 <div className="flex justify-end space-x-4 pt-4">
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={handleCancel}
-                    className="flex items-center px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors font-medium"
                     disabled={loading}
                   >
-                    <FiXCircle className="mr-2" />
+                    <FiXCircle className="mr-2 h-4 w-4" />
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
                     disabled={loading}
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                   >
-                    <FiSave className="mr-2" />
+                    <FiSave className="mr-2 h-4 w-4" />
                     {loading ? 'Saving...' : 'Save Changes'}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
           </form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Business Management Section - Only show if user has a business */}
       {business && (
@@ -316,81 +324,87 @@ const UserProfile = ({ user, onProfileUpdate, business }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-red-50/90 dark:bg-red-900/20 rounded-lg shadow-xl border-2 border-red-200/50 dark:border-red-800/50 overflow-hidden mt-6"
+          className="mt-6"
         >
-          <div className="p-6 sm:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-2xl font-bold text-red-800 dark:text-red-200 flex items-center gap-3">
-                  <span className="text-3xl">⚠️</span>
-                  Business Management
-                </h3>
-                <p className="text-red-700 dark:text-red-300 mt-1 text-sm">
-                  Manage or delete your business from here
-                </p>
+          <Card className="bg-red-50/90 dark:bg-red-900/20 border-2 border-red-200/50 dark:border-red-800/50 shadow-xl">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-2xl text-red-800 dark:text-red-200 flex items-center gap-3">
+                    <span className="text-3xl">⚠️</span>
+                    Business Management
+                  </CardTitle>
+                  <CardDescription className="text-red-700 dark:text-red-300 mt-1">
+                    Manage or delete your business from here
+                  </CardDescription>
+                </div>
               </div>
-            </div>
-
-            {/* Business Info Card */}
-            <div className="bg-white dark:bg-red-900/30 rounded-xl p-6 border border-red-200 dark:border-red-800 mb-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Your Business
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <p className="text-gray-700 dark:text-gray-300">
-                      <span className="font-medium">Name:</span> {business.name}
-                    </p>
-                    <p className="text-gray-700 dark:text-gray-300">
-                      <span className="font-medium">Type:</span> {business.type?.replace('_', ' ')}
-                    </p>
-                    <p className="text-gray-700 dark:text-gray-300">
-                      <span className="font-medium">Location:</span> {business.location}
-                    </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Business Info Card */}
+              <Card className="bg-background/50 border-red-200 dark:border-red-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="text-lg font-semibold mb-2">
+                        Your Business
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <p className="text-muted-foreground">
+                          <span className="font-medium text-foreground">Name:</span> {business.name}
+                        </p>
+                        <p className="text-muted-foreground">
+                          <span className="font-medium text-foreground">Type:</span> {business.type?.replace('_', ' ')}
+                        </p>
+                        <p className="text-muted-foreground">
+                          <span className="font-medium text-foreground">Location:</span> {business.location}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => navigate('/my-business')}
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                    >
+                      Manage Business
+                    </Button>
                   </div>
-                </div>
-                <button
-                  onClick={() => navigate('/my-business')}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Manage Business
-                </button>
-              </div>
-            </div>
+                </CardContent>
+              </Card>
 
-            {/* Danger Zone */}
-            <div className="bg-white dark:bg-red-900/30 rounded-xl p-6 border border-red-300 dark:border-red-800">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
-                    Delete Business
-                  </h4>
-                  <p className="text-red-700 dark:text-red-300 text-sm mb-4">
-                    Permanently delete your business and all associated data including reservations, 
-                    photos, and customer information. This action cannot be undone.
-                  </p>
-                  <ul className="text-red-600 dark:text-red-400 text-xs space-y-1 ml-4 list-disc">
-                    <li>All business information will be permanently deleted</li>
-                    <li>All reservations and booking history will be lost</li>
-                    <li>All uploaded photos will be removed</li>
-                    <li>Customer data and reviews will be deleted</li>
-                  </ul>
-                </div>
-                <div className="ml-6 flex-shrink-0">
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowDeleteModal(true)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border-2 border-red-700"
-                  >
-                    <span>🗑️</span>
-                    Delete Business
-                  </motion.button>
-                </div>
-              </div>
-            </div>
-          </div>
+              {/* Danger Zone */}
+              <Card className="bg-background/50 border-red-300 dark:border-red-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+                        Delete Business
+                      </h4>
+                      <p className="text-red-700 dark:text-red-300 text-sm mb-4">
+                        Permanently delete your business and all associated data including reservations, 
+                        photos, and customer information. This action cannot be undone.
+                      </p>
+                      <ul className="text-red-600 dark:text-red-400 text-xs space-y-1 ml-4 list-disc">
+                        <li>All business information will be permanently deleted</li>
+                        <li>All reservations and booking history will be lost</li>
+                        <li>All uploaded photos will be removed</li>
+                        <li>Customer data and reviews will be deleted</li>
+                      </ul>
+                    </div>
+                    <div className="ml-6 flex-shrink-0">
+                      <Button
+                        variant="destructive"
+                        onClick={() => setShowDeleteModal(true)}
+                        className="shadow-lg hover:shadow-xl gap-2"
+                      >
+                        <span>🗑️</span>
+                        Delete Business
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </CardContent>
+          </Card>
         </motion.div>
       )}
 
