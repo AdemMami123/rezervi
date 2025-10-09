@@ -11,6 +11,7 @@ import {
   FiCheckCircle,
   FiAlertCircle
 } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import AnimatedLayout from '../components/AnimatedLayout';
 import API from '../utils/api';
 import { cn } from '../utils/cn';
@@ -35,6 +36,43 @@ function Login() {
       });
       console.log('Login successful, response:', response.data);
       console.log('Attempting to navigate to /');
+      
+      // Check if user owns a business and fetch weekly stats
+      try {
+        const businessRes = await API.get('/api/business/user-business');
+        if (businessRes.data.business) {
+          // User owns a business, fetch weekly stats
+          try {
+            const weeklyStatsRes = await API.get('/api/business/reservations/weekly-stats');
+            const { newReservations, cancellations } = weeklyStatsRes.data.stats;
+            
+            // Show notification with weekly stats
+            if (newReservations > 0 || cancellations > 0) {
+              toast.success(
+                `📊 Weekly Update: You have ${newReservations} new reservation${newReservations !== 1 ? 's' : ''} and ${cancellations} cancellation${cancellations !== 1 ? 's' : ''} this week`,
+                {
+                  duration: 5000,
+                  icon: '🔔',
+                  style: {
+                    minWidth: '350px',
+                  },
+                }
+              );
+            } else {
+              toast.success('Welcome back! No new reservations or cancellations this week.', {
+                duration: 5000,
+                icon: '👋',
+              });
+            }
+          } catch (statsErr) {
+            console.log('Error fetching weekly stats:', statsErr);
+            // Don't show error to user, just log it
+          }
+        }
+      } catch (businessErr) {
+        console.log('User does not own a business');
+        // Not a business owner, no notification needed
+      }
       
       // Small delay to show success state before navigation
       setTimeout(() => {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import NewHome from './pages/NewHome';
@@ -106,6 +107,33 @@ function App() {
       <SubscriptionProvider>
         <Router>
           <AnimatedRoutes />
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              duration: 5000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '14px',
+              },
+              success: {
+                duration: 5000,
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
         </Router>
       </SubscriptionProvider>
     </ThemeProvider>

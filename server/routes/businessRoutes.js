@@ -8,6 +8,7 @@ const {
   acceptReservation, 
   declineReservation, 
   getReservationStats,
+  getWeeklyReservationStats,
   getBusinessSettings, 
   updateBusinessSettings, 
   getUserBusiness, 
@@ -60,6 +61,7 @@ router.put('/reservations/:id', updateReservationStatus);
 router.put('/reservations/:id/accept', acceptReservation);
 router.put('/reservations/:id/decline', declineReservation);
 router.get('/reservations/stats', getReservationStats);
+router.get('/reservations/weekly-stats', getWeeklyReservationStats);
 
 // Business settings
 router.get('/settings', getBusinessSettings);

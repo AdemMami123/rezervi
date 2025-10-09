@@ -614,6 +614,66 @@ const getReservationStats = async (req, res) => {
   }
 };
 
+// Get weekly reservation stats for notification
+const getWeeklyReservationStats = async (req, res) => {
+  const user_id = req.user.id;
+
+  try {
+    const business_id = await _getBusinessIdForUser(req.supabase, user_id);
+
+    // Calculate the start (Monday) and end (Sunday) of the current week
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const daysToMonday = currentDay === 0 ? 6 : currentDay - 1; // If Sunday, go back 6 days
+    
+    // Start of week (Monday at 00:00:00)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - daysToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    // End of week (Sunday at 23:59:59)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    const startDate = startOfWeek.toISOString().split('T')[0];
+    const endDate = endOfWeek.toISOString().split('T')[0];
+
+    // Get all reservations for the current week
+    const { data: weeklyReservations, error } = await req.supabase
+      .from('reservations')
+      .select('id, status, created_at')
+      .eq('business_id', business_id)
+      .gte('date', startDate)
+      .lte('date', endDate);
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    // Calculate new reservations (created this week)
+    const newReservations = weeklyReservations.filter(r => {
+      const createdAt = new Date(r.created_at);
+      return createdAt >= startOfWeek && createdAt <= endOfWeek;
+    }).length;
+
+    // Calculate cancellations this week
+    const cancellations = weeklyReservations.filter(r => r.status === 'cancelled').length;
+
+    res.status(200).json({ 
+      stats: {
+        newReservations,
+        cancellations,
+        startDate,
+        endDate
+      }
+    });
+  } catch (error) {
+    console.error('Error getting weekly reservation stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Upload business photos
 const uploadBusinessPhotos = async (req, res) => {
   if (!req.user || !req.user.id) {
@@ -950,6 +1010,7 @@ module.exports = {
   acceptReservation,
   declineReservation,
   getReservationStats,
+  getWeeklyReservationStats,
   getBusinessSettings,
   updateBusinessSettings,
   getUserBusiness,
