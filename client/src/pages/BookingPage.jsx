@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API from '../utils/api';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 
 const BookingPage = () => {
   const { businessId } = useParams();
@@ -164,43 +169,44 @@ const BookingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => navigate(-1)}
-            className="text-blue-600 hover:text-blue-800 mb-4 flex items-center text-sm sm:text-base"
+            className="mb-4 text-sm sm:text-base"
           >
             ← Back to search
-          </button>
+          </Button>
           
           {business && (
             <div className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
               <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{business.name}</h1>
-                <p className="text-gray-600 mt-1 flex items-center text-sm sm:text-base">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{business.name}</h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-1 flex items-center text-sm sm:text-base">
                   <span className="mr-2">📍</span>
                   {business.location}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3">
-                  <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium rounded-full">
+                  <Badge variant="secondary" className="text-xs sm:text-sm">
                     {business.type?.replace('_', ' ')}
-                  </span>
+                  </Badge>
                   <div className="flex items-center">
                     <span className="text-yellow-400 mr-1">★</span>
-                    <span className="text-xs sm:text-sm text-gray-600">4.2 (23 reviews)</span>
+                    <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">4.2 (23 reviews)</span>
                   </div>
                 </div>
               </div>
               <div className="text-left sm:text-right">
-                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
                   {finalPrice.toFixed(2)} TND
                 </div>
                 {paymentMethod === 'online' && (
-                  <div className="text-sm text-green-500">
+                  <Badge variant="secondary" className="text-sm text-green-600 dark:text-green-400 mt-1">
                     2% discount applied!
-                  </div>
+                  </Badge>
                 )}
               </div>
             </div>
@@ -210,14 +216,15 @@ const BookingPage = () => {
 
       {/* Booking Form */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Book Your Appointment</h2>
-            
+        <Card className="shadow-lg border-2">
+          <CardHeader>
+            <CardTitle className="text-xl sm:text-2xl">Book Your Appointment</CardTitle>
+          </CardHeader>
+          <CardContent>
             {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              <Badge variant="destructive" className="mb-4 w-full py-2">
                 {error}
-              </div>
+              </Badge>
             )}
 
             <form onSubmit={handleBooking} className="space-y-6">
@@ -278,46 +285,39 @@ const BookingPage = () => {
 
               {/* Customer Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name *
-                  </label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name *</Label>
+                  <Input
+                    id="fullName"
                     type="text"
                     required
                     value={customerInfo.name}
                     onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number *
-                  </label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Input
+                    id="phone"
                     type="tel"
                     required
                     value={customerInfo.phone}
                     onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
                     type="email"
                     value={customerInfo.email}
                     onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Special Notes
-                  </label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Special Notes</Label>
+                  <Input
+                    id="notes"
                     type="text"
                     value={customerInfo.notes}
                     onChange={(e) => setCustomerInfo({...customerInfo, notes: e.target.value})}
@@ -435,23 +435,24 @@ const BookingPage = () => {
               )}
 
               {/* Submit Button */}
-              <div className="flex justify-between items-center pt-6 border-t">
+              <div className="flex flex-col sm:flex-row justify-between items-center pt-6 border-t gap-4">
                 <div className="text-lg font-semibold">
-                  Total: <span className="text-2xl text-green-600">{finalPrice.toFixed(2)} TND</span>
+                  Total: <span className="text-2xl text-green-600 dark:text-green-400">{finalPrice.toFixed(2)} TND</span>
                 </div>
-                <button
+                <Button
                   type="submit"
                   disabled={bookingLoading || !selectedTimeSlot}
-                  className="px-8 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-8 py-3"
+                  size="lg"
                 >
                   {bookingLoading ? 'Processing...' : 
                    paymentMethod === 'online' && !showPaymentForm ? 'Continue to Payment' : 
                    'Confirm Booking'}
-                </button>
+                </Button>
               </div>
             </form>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

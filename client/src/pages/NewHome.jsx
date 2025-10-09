@@ -27,6 +27,8 @@ import toast from 'react-hot-toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
 
 function Home() {
   const [user, setUser] = useState(null);
@@ -726,63 +728,67 @@ const DiscoverSection = ({
 
     {/* Search and Filters */}
     <motion.div 
-      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100 dark:border-gray-700"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="🔍 Search businesses, services, or locations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 sm:px-6 py-3 sm:py-4 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-base sm:text-lg transition-all duration-200"
-          />
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <select
-            value={filters.type}
-            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-            className="px-4 sm:px-6 py-3 sm:py-4 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white min-w-[180px] transition-all duration-200 text-sm sm:text-base"
-          >
-            {businessTypes.map(type => (
-              <option key={type.value} value={type.value}>{type.label}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="📍 Location..."
-            value={filters.location}
-            onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
-            className="px-4 sm:px-6 py-3 sm:py-4 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 min-w-[200px] transition-all duration-200 text-sm sm:text-base"
-          />
-        </div>
-      </div>
+      <Card className="shadow-xl border-2">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="flex-1">
+              <Input
+                type="text"
+                placeholder="🔍 Search businesses, services, or locations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-12 sm:h-14 text-base sm:text-lg px-4 sm:px-6"
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <select
+                value={filters.type}
+                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+                className="h-12 sm:h-14 px-4 sm:px-6 border border-input rounded-md bg-background focus:ring-2 focus:ring-ring min-w-[180px] text-sm sm:text-base"
+              >
+                {businessTypes.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+              <Input
+                type="text"
+                placeholder="📍 Location..."
+                value={filters.location}
+                onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                className="h-12 sm:h-14 min-w-[200px] text-sm sm:text-base px-4 sm:px-6"
+              />
+            </div>
+          </div>
       
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-        <motion.p 
-          className="text-gray-600 dark:text-gray-300 text-sm sm:text-base"
-          key={filteredBusinesses.length}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <span className="font-semibold text-blue-600 dark:text-blue-400">{filteredBusinesses.length}</span> businesses found
-        </motion.p>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setShowMapModal(true);
-              getCurrentLocation(); // Get user location when opening map
-            }}
-            className="px-3 sm:px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900 flex items-center gap-2 text-sm sm:text-base"
-          >
-            <span>🗺️</span>
-            Map View
-          </button>
-        </div>
-      </div>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+            <motion.p 
+              className="text-muted-foreground text-sm sm:text-base"
+              key={filteredBusinesses.length}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <span className="font-semibold text-primary">{filteredBusinesses.length}</span> businesses found
+            </motion.p>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  setShowMapModal(true);
+                  getCurrentLocation(); // Get user location when opening map
+                }}
+                variant="outline"
+                className="gap-2 text-sm sm:text-base"
+              >
+                <span>🗺️</span>
+                Map View
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
 
     {/* Business Grid */}
@@ -1445,134 +1451,156 @@ const BusinessSection = ({
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700"
       >
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold">
-            {userBusiness?.name?.charAt(0) || 'B'}
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-              {userBusiness?.name || 'My Business'}
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 capitalize">
-              {userBusiness?.type?.replace('_', ' ') || 'Business'} • {userBusiness?.location || 'No location set'}
-            </p>
-            <div className="flex items-center mt-2 space-x-4">
-              <span className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                📞 {userBusiness?.phone || 'No phone'}
-              </span>
-              <span className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                ✉️ {userBusiness?.email || 'No email'}
-              </span>
+        <Card className="shadow-2xl border-2">
+          <CardHeader className="pb-4">
+            <div className="flex items-center space-x-4">
+              <Avatar className="w-16 h-16 ring-4 ring-primary/20">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-2xl font-bold">
+                  {userBusiness?.name?.charAt(0) || 'B'}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-xl">
+                  {userBusiness?.name || 'My Business'}
+                </CardTitle>
+                <CardDescription className="capitalize text-base">
+                  {userBusiness?.type?.replace('_', ' ') || 'Business'} • {userBusiness?.location || 'No location set'}
+                </CardDescription>
+                <div className="flex items-center mt-2 space-x-4">
+                  <Badge variant="outline" className="gap-1">
+                    <span>📞</span> {userBusiness?.phone || 'No phone'}
+                  </Badge>
+                  <Badge variant="outline" className="gap-1">
+                    <span>✉️</span> {userBusiness?.email || 'No email'}
+                  </Badge>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardHeader>
+          <CardContent>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Pending Reservations - Most Important */}
-          <div className={`p-4 rounded-xl ${
+          <Card className={`shadow-md hover:shadow-xl transition-shadow ${
             analytics.pendingReservations > 0 
-              ? 'bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900 dark:to-orange-800 ring-2 ring-orange-200 dark:ring-orange-700' 
-              : 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700'
+              ? 'bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/50 dark:to-orange-800/50 ring-2 ring-orange-200 dark:ring-orange-700' 
+              : 'bg-gradient-to-r from-muted/50 to-muted'
           }`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm font-medium ${
-                  analytics.pendingReservations > 0 
-                    ? 'text-orange-600 dark:text-orange-300' 
-                    : 'text-gray-600 dark:text-gray-300'
-                }`}>
-                  Pending
-                </p>
-                <p className={`text-2xl font-bold ${
-                  analytics.pendingReservations > 0 
-                    ? 'text-orange-700 dark:text-orange-200' 
-                    : 'text-gray-700 dark:text-gray-200'
-                }`}>
-                  {analytics.pendingReservations}
-                </p>
-                {analytics.pendingReservations > 0 && (
-                  <p className="text-xs text-orange-500 dark:text-orange-400 font-medium">
-                    Needs action!
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-sm font-medium ${
+                    analytics.pendingReservations > 0 
+                      ? 'text-orange-600 dark:text-orange-300' 
+                      : 'text-muted-foreground'
+                  }`}>
+                    Pending
                   </p>
-                )}
+                  <p className={`text-2xl font-bold ${
+                    analytics.pendingReservations > 0 
+                      ? 'text-orange-700 dark:text-orange-200' 
+                      : 'text-foreground'
+                  }`}>
+                    {analytics.pendingReservations}
+                  </p>
+                  {analytics.pendingReservations > 0 && (
+                    <Badge variant="secondary" className="text-xs mt-1 bg-orange-500 text-white">
+                      Needs action!
+                    </Badge>
+                  )}
+                </div>
+                <div className={`text-3xl ${
+                  analytics.pendingReservations > 0 
+                    ? 'text-orange-500' 
+                    : 'text-muted-foreground'
+                }`}>
+                  ⏳
+                </div>
               </div>
-              <div className={`text-2xl ${
-                analytics.pendingReservations > 0 
-                  ? 'text-orange-500' 
-                  : 'text-gray-500'
-              }`}>
-                ⏳
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-600 dark:text-blue-300 text-sm font-medium">Today</p>
-                <p className="text-2xl font-bold text-blue-700 dark:text-blue-200">{analytics.todayReservations}</p>
+          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/50 dark:to-blue-800/50 shadow-md hover:shadow-xl transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-600 dark:text-blue-300 text-sm font-medium">Today</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-200">{analytics.todayReservations}</p>
+                </div>
+                <div className="text-blue-500 text-3xl">📅</div>
               </div>
-              <div className="text-blue-500 text-2xl">📅</div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
           
-          <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-600 dark:text-green-300 text-sm font-medium">This Month</p>
-                <p className="text-2xl font-bold text-green-700 dark:text-green-200">{analytics.monthlyReservations}</p>
+          <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/50 dark:to-green-800/50 shadow-md hover:shadow-xl transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-600 dark:text-green-300 text-sm font-medium">This Month</p>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-200">{analytics.monthlyReservations}</p>
+                </div>
+                <div className="text-green-500 text-3xl">📊</div>
               </div>
-              <div className="text-green-500 text-2xl">📊</div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
           
-          <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-600 dark:text-purple-300 text-sm font-medium">Revenue</p>
-                <p className="text-2xl font-bold text-purple-700 dark:text-purple-200">${analytics.totalRevenue}</p>
+          <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/50 dark:to-purple-800/50 shadow-md hover:shadow-xl transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-600 dark:text-purple-300 text-sm font-medium">Revenue</p>
+                  <p className="text-2xl font-bold text-purple-700 dark:text-purple-200">${analytics.totalRevenue}</p>
+                </div>
+                <div className="text-purple-500 text-3xl">💰</div>
               </div>
-              <div className="text-purple-500 text-2xl">💰</div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
           
-          <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-yellow-600 dark:text-yellow-300 text-sm font-medium">Rating</p>
-                <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-200">{analytics.averageRating}⭐</p>
+          <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/50 dark:to-yellow-800/50 shadow-md hover:shadow-xl transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-yellow-600 dark:text-yellow-300 text-sm font-medium">Rating</p>
+                  <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-200">{analytics.averageRating}⭐</p>
+                </div>
+                <div className="text-yellow-500 text-3xl">⭐</div>
               </div>
-              <div className="text-yellow-500 text-2xl">⭐</div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Navigation Tabs */}
-      <div className="flex space-x-2 bg-gray-100 dark:bg-gray-800 p-2 rounded-xl">
-        {navigationItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-lg transition-all duration-200 relative ${
-              activeTab === item.id
-                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            <span className="text-lg">{item.icon}</span>
-            <span className="font-medium">{item.label}</span>
-            {item.badge > 0 && (
-              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                {item.badge}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <Card className="shadow-lg border-2">
+        <CardContent className="p-2">
+          <div className="flex flex-col sm:flex-row gap-2">
+            {navigationItems.map((item) => (
+              <Button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                variant={activeTab === item.id ? 'default' : 'ghost'}
+                className={`flex-1 relative gap-2 ${
+                  activeTab === item.id 
+                    ? 'shadow-md' 
+                    : ''
+                }`}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+                {item.badge > 0 && (
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    {item.badge}
+                  </Badge>
+                )}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tab Content */}
       <AnimatePresence mode="wait">
@@ -1585,70 +1613,83 @@ const BusinessSection = ({
             className="space-y-6"
           >
             {/* Recent Reservations */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Reservations</h4>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {safeReservations.filter(r => r.status === 'pending').length} pending
-                </span>
-              </div>
-              <div className="space-y-3">
-                {safeReservations.slice(0, 5).map((reservation, index) => (
-                  <div key={reservation.id || index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                        {reservation.customer_name?.charAt(0) || 'U'}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{reservation.customer_name || 'Unknown Customer'}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {reservation.date ? new Date(reservation.date).toLocaleDateString() : 'No date'} at {reservation.time || 'No time'}
-                        </p>
-                        {reservation.notes && (
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs truncate">
-                            {reservation.notes}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        reservation.status === 'confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
-                        reservation.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
-                        'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
-                      }`}>
-                        {reservation.status}
-                      </span>
-                      {reservation.status === 'pending' && (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleReservationStatusUpdate(reservation.id, 'confirmed', reservation)}
-                            className="px-3 py-1 bg-green-500 text-white text-xs rounded-md hover:bg-green-600 transition-colors shadow-md hover:shadow-lg"
-                            title="Confirm Reservation"
-                          >
-                            ✓ Confirm
-                          </button>
-                          <button
-                            onClick={() => handleReservationStatusUpdate(reservation.id, 'cancelled', reservation)}
-                            className="px-3 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 transition-colors shadow-md hover:shadow-lg"
-                            title="Decline Reservation"
-                          >
-                            ✗ Decline
-                          </button>
+            <Card className="shadow-xl border-2">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Recent Reservations</CardTitle>
+                  <Badge variant="secondary">
+                    {safeReservations.filter(r => r.status === 'pending').length} pending
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {safeReservations.slice(0, 5).map((reservation, index) => (
+                    <Card key={reservation.id || index} className="bg-muted/50">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold">
+                                {reservation.customer_name?.charAt(0) || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-semibold">{reservation.customer_name || 'Unknown Customer'}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {reservation.date ? new Date(reservation.date).toLocaleDateString() : 'No date'} at {reservation.time || 'No time'}
+                              </p>
+                              {reservation.notes && (
+                                <p className="text-xs text-muted-foreground mt-1 max-w-xs truncate">
+                                  {reservation.notes}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <Badge variant={
+                              reservation.status === 'confirmed' ? 'default' :
+                              reservation.status === 'pending' ? 'secondary' :
+                              'destructive'
+                            }>
+                              {reservation.status}
+                            </Badge>
+                            {reservation.status === 'pending' && (
+                              <div className="flex space-x-2">
+                                <Button
+                                  onClick={() => handleReservationStatusUpdate(reservation.id, 'confirmed', reservation)}
+                                  size="sm"
+                                  className="bg-green-500 hover:bg-green-600 h-8"
+                                  title="Confirm Reservation"
+                                >
+                                  ✓ Confirm
+                                </Button>
+                                <Button
+                                  onClick={() => handleReservationStatusUpdate(reservation.id, 'cancelled', reservation)}
+                                  size="sm"
+                                  variant="destructive"
+                                  className="h-8"
+                                  title="Decline Reservation"
+                                >
+                                  ✗ Decline
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {safeReservations.length === 0 && (
+                    <div className="text-center py-8">
+                      <div className="text-gray-400 text-4xl mb-3">📅</div>
+                      <p className="text-muted-foreground">No reservations yet</p>
+                      <p className="text-sm text-muted-foreground">Your reservations will appear here</p>
                     </div>
-                  </div>
-                ))}
-                {safeReservations.length === 0 && (
-                  <div className="text-center py-8">
-                    <div className="text-gray-400 text-4xl mb-3">📅</div>
-                    <p className="text-gray-500 dark:text-gray-400">No reservations yet</p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500">Your reservations will appear here</p>
-                  </div>
-                )}
-              </div>
-            </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 
@@ -1661,27 +1702,27 @@ const BusinessSection = ({
             className="space-y-6"
           >
             {/* Filter Bar */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xl font-semibold text-gray-900 dark:text-white">All Reservations</h4>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2 text-sm">
-                    <span className="flex items-center">
-                      <div className="w-3 h-3 bg-yellow-400 rounded-full mr-1"></div>
+            <Card className="shadow-xl border-2">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <CardTitle className="text-xl">All Reservations</CardTitle>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" className="gap-1">
+                      <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
                       Pending: {safeReservations.filter(r => r.status === 'pending').length}
-                    </span>
-                    <span className="flex items-center">
-                      <div className="w-3 h-3 bg-green-400 rounded-full mr-1"></div>
+                    </Badge>
+                    <Badge variant="secondary" className="gap-1">
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                       Confirmed: {safeReservations.filter(r => r.status === 'confirmed').length}
-                    </span>
-                    <span className="flex items-center">
-                      <div className="w-3 h-3 bg-red-400 rounded-full mr-1"></div>
+                    </Badge>
+                    <Badge variant="secondary" className="gap-1">
+                      <div className="w-2 h-2 bg-red-400 rounded-full"></div>
                       Cancelled: {safeReservations.filter(r => r.status === 'cancelled').length}
-                    </span>
+                    </Badge>
                   </div>
                 </div>
-              </div>
-            </div>
+              </CardHeader>
+            </Card>
 
             {/* Reservations List */}
             <div className="space-y-4">
@@ -1691,126 +1732,128 @@ const BusinessSection = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden"
                 >
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                          {reservation.customer_name?.charAt(0) || 'U'}
-                        </div>
-                        <div>
-                          <h5 className="text-lg font-semibold text-gray-900 dark:text-white">{reservation.customer_name || 'Unknown Customer'}</h5>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                            <span className="flex items-center">
-                              📅 {reservation.date ? new Date(reservation.date).toLocaleDateString() : 'No date'}
-                            </span>
-                            <span className="flex items-center">
-                              🕐 {reservation.time || 'No time'}
-                            </span>
-                            {reservation.phone && (
-                              <span className="flex items-center">
-                                📞 {reservation.phone}
+                  <Card className="shadow-xl border-2 hover:shadow-2xl transition-shadow duration-300">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
+                        <div className="flex items-center space-x-4">
+                          <Avatar className="w-12 h-12 ring-2 ring-primary/20">
+                            <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold text-lg">
+                              {reservation.customer_name?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h5 className="text-lg font-semibold">{reservation.customer_name || 'Unknown Customer'}</h5>
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                📅 {reservation.date ? new Date(reservation.date).toLocaleDateString() : 'No date'}
                               </span>
-                            )}
+                              <span className="flex items-center gap-1">
+                                🕐 {reservation.time || 'No time'}
+                              </span>
+                              {reservation.phone && (
+                                <span className="flex items-center gap-1">
+                                  📞 {reservation.phone}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-                          reservation.status === 'confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
-                          reservation.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
-                          'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
-                        }`}>
+                        <Badge variant={
+                          reservation.status === 'confirmed' ? 'default' :
+                          reservation.status === 'pending' ? 'secondary' :
+                          'destructive'
+                        } className="text-sm px-4 py-2">
                           {reservation.status ? (reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)) : 'Unknown'}
-                        </span>
+                        </Badge>
                       </div>
-                    </div>
-                    
-                    {reservation.notes && (
-                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          <span className="font-medium">Notes:</span> {reservation.notes}
-                        </p>
-                      </div>
-                    )}
+                      
+                      {reservation.notes && (
+                        <Card className="bg-muted/50 mb-4">
+                          <CardContent className="p-3">
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium">Notes:</span> {reservation.notes}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
 
-                    {reservation.services && (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Services:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {reservation.services.split(',').map((service, idx) => (
-                            <span key={idx} className="px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 text-xs rounded-md">
-                              {service.trim()}
-                            </span>
+                      {reservation.services && (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium mb-2">Services:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {reservation.services.split(',').map((service, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {service.trim()}
+                              </Badge>
                           ))}
                         </div>
                       </div>
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-600">
-                      <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between pt-4 border-t gap-3">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         {reservation.price && (
-                          <span className="font-medium text-gray-700 dark:text-gray-300">
-                            💰 ${reservation.price}
-                          </span>
+                          <Badge variant="outline" className="gap-1">
+                            <span>💰</span> ${reservation.price}
+                          </Badge>
                         )}
-                        <span>
+                        <span className="text-xs">
                           📍 Created {new Date(reservation.created_at || Date.now()).toLocaleDateString()}
                         </span>
                       </div>
                       
-                      <div className="flex space-x-3">
+                      <div className="flex flex-wrap gap-2">
                         {reservation.status === 'pending' && (
                           <>
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                            <Button
                               onClick={() => handleReservationStatusUpdate(reservation.id, 'confirmed', reservation)}
-                              className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-md hover:shadow-lg"
+                              className="bg-green-500 hover:bg-green-600 gap-2"
+                              size="sm"
                             >
                               <span>✓</span>
                               <span>Confirm</span>
-                            </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                            </Button>
+                            <Button
                               onClick={() => handleReservationStatusUpdate(reservation.id, 'cancelled', reservation)}
-                              className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md hover:shadow-lg"
+                              variant="destructive"
+                              className="gap-2"
+                              size="sm"
                             >
                               <span>✗</span>
                               <span>Decline</span>
-                            </motion.button>
+                            </Button>
                           </>
                         )}
                         
                         {reservation.status === 'confirmed' && (
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                          <Button
                             onClick={() => handleReservationStatusUpdate(reservation.id, 'cancelled', reservation)}
-                            className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors shadow-md hover:shadow-lg"
+                            variant="secondary"
+                            className="gap-2"
+                            size="sm"
                           >
                             <span>↩</span>
                             <span>Cancel</span>
-                          </motion.button>
+                          </Button>
                         )}
 
                         {reservation.customer_phone && (
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                          <Button
                             onClick={() => window.open(`tel:${reservation.customer_phone}`)}
-                            className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md hover:shadow-lg"
+                            variant="outline"
+                            className="gap-2"
+                            size="sm"
                           >
                             <span>📞</span>
                             <span>Call</span>
-                          </motion.button>
+                          </Button>
                         )}
                       </div>
                     </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               ))}
               
@@ -1818,13 +1861,16 @@ const BusinessSection = ({
                 <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12 text-center border border-gray-100 dark:border-gray-700"
                 >
-                  <div className="text-gray-400 text-6xl mb-4">📅</div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No reservations yet</h3>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    When customers make reservations, they'll appear here for you to manage.
-                  </p>
+                  <Card className="shadow-xl border-2">
+                    <CardContent className="p-12 text-center">
+                      <div className="text-6xl mb-4 opacity-50">📅</div>
+                      <CardTitle className="text-xl mb-2">No reservations yet</CardTitle>
+                      <p className="text-muted-foreground">
+                        When customers make reservations, they'll appear here for you to manage.
+                      </p>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               )}
             </div>
@@ -1845,45 +1891,47 @@ const BusinessSection = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700"
           >
-            <div className="flex items-center justify-between mb-6">
-              <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Business Details
-              </h4>
-              {!isEditingDetails ? (
-                <div className="flex gap-3">
-                  <button 
-                    onClick={handleEditToggle}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                  >
-                    ✏️ Edit Business Details
-                  </button>
-                  <button 
-                    onClick={handleEditToggle}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
-                  >
-                    🕒 Manage Hours
-                  </button>
+            <Card className="shadow-xl border-2">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Business Details</CardTitle>
+                  {!isEditingDetails ? (
+                    <div className="flex gap-3">
+                      <Button 
+                        onClick={handleEditToggle}
+                        className="gap-2"
+                      >
+                        <span>✏️</span> Edit Business Details
+                      </Button>
+                      <Button 
+                        onClick={handleEditToggle}
+                        variant="secondary"
+                        className="gap-2 bg-green-500 hover:bg-green-600 text-white"
+                      >
+                        <span>🕒</span> Manage Hours
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleSave}
+                        disabled={loading}
+                        className="gap-2 bg-green-500 hover:bg-green-600"
+                      >
+                        {loading ? '⏳' : '💾'} {loading ? 'Saving...' : 'Save'}
+                      </Button>
+                      <Button 
+                        onClick={handleCancel}
+                        variant="outline"
+                      >
+                        <span>❌</span> Cancel
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleSave}
-                    disabled={loading}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {loading ? '⏳' : '💾'} {loading ? 'Saving...' : 'Save'}
-                  </button>
-                  <button 
-                    onClick={handleCancel}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                  >
-                    ❌ Cancel
-                  </button>
-                </div>
-              )}
-            </div>
+              </CardHeader>
+              <CardContent>
 
             {/* Message */}
             {message && (
@@ -2173,6 +2221,8 @@ const BusinessSection = ({
                 </ErrorBoundary>
               </div>
             )}
+              </CardContent>
+            </Card>
           </motion.div>
         )}
       </AnimatePresence>
@@ -2739,37 +2789,35 @@ const BookingCard = ({ booking, onShowDetails, onShowReschedule, onShowCancel })
         <div className="flex gap-1">
           {booking.status === 'confirmed' && (
             <>
-              <motion.button 
+              <Button 
                 onClick={() => onShowReschedule && onShowReschedule(booking)}
-                className="flex-1 px-2 py-1.5 text-xs font-medium bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center justify-center space-x-1"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="flex-1 h-auto py-1.5 text-xs font-medium bg-yellow-500 hover:bg-yellow-600 gap-1"
+                size="sm"
               >
                 <span>🔄</span>
                 <span>Reschedule</span>
-              </motion.button>
+              </Button>
               
-              <motion.button 
+              <Button 
                 onClick={() => onShowCancel && onShowCancel(booking)}
-                className="flex-1 px-2 py-1.5 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center space-x-1"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                variant="destructive"
+                className="flex-1 h-auto py-1.5 text-xs font-medium gap-1"
+                size="sm"
               >
                 <span>🚫</span>
                 <span>Cancel</span>
-              </motion.button>
+              </Button>
             </>
           )}
           
-          <motion.button 
+          <Button 
             onClick={() => onShowDetails && onShowDetails(booking)}
-            className={`${booking.status === 'confirmed' ? 'w-full mt-1' : 'flex-1'} px-2 py-1.5 text-xs font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center space-x-1`}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            className={`${booking.status === 'confirmed' ? 'w-full mt-1' : 'flex-1'} h-auto py-1.5 text-xs font-medium gap-1`}
+            size="sm"
           >
             <span>👁️</span>
             <span>Details</span>
-          </motion.button>
+          </Button>
         </div>
       </div>
 

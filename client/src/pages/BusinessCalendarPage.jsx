@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { format, isToday as isDateToday } from 'date-fns';
 import API from '../utils/api';
 import BookingDetailsModal from '../components/BookingDetailsModal';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 
 const BusinessCalendarPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -161,43 +164,51 @@ const BusinessCalendarPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="container mx-auto p-4 md:p-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-4 md:mb-0">
-              Business Calendar
-            </h1>
-            
-            <div className="flex items-center space-x-2">
-              <button 
-                onClick={goToToday}
-                className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800"
-              >
-                Today
-              </button>
+        <Card className="shadow-xl border-2 mb-6">
+          <CardHeader>
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <CardTitle className="text-2xl md:text-3xl mb-4 md:mb-0">
+                Business Calendar
+              </CardTitle>
               
-              <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                <button 
-                  onClick={goToPreviousMonth}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+              <div className="flex items-center space-x-2">
+                <Button 
+                  onClick={goToToday}
+                  variant="secondary"
+                  size="sm"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <span className="px-2 font-medium">
-                  {monthNames[currentMonth]} {currentYear}
-                </span>
-                <button 
-                  onClick={goToNextMonth}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+                  Today
+                </Button>
+                
+                <div className="flex items-center bg-muted rounded-lg p-1">
+                  <Button 
+                    onClick={goToPreviousMonth}
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </Button>
+                  <span className="px-2 font-medium">
+                    {monthNames[currentMonth]} {currentYear}
+                  </span>
+                  <Button 
+                    onClick={goToNextMonth}
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          </CardHeader>
+          <CardContent>
 
           {loading ? (
             <div className="flex justify-center items-center h-64">
@@ -301,27 +312,31 @@ const BusinessCalendarPage = () => {
               </div>
             </div>
           )}
-        </div>
+          </CardContent>
+        </Card>
         
         {/* Selected Date Reservations */}
         {selectedDate && (
-          <div id="selected-date-reservations" className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-                Reservations for {format(selectedDate, 'MMMM d, yyyy')}
-              </h2>
-              <button 
-                onClick={() => setSelectedDate(null)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
+          <Card className="shadow-xl border-2 mb-6">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-xl">
+                  Reservations for {format(selectedDate, 'MMMM d, yyyy')}
+                </CardTitle>
+                <Button 
+                  onClick={() => setSelectedDate(null)}
+                  variant="ghost"
+                  size="icon"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
             {selectedReservations.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+              <p className="text-muted-foreground text-center py-8">
                 No reservations for this date.
               </p>
             ) : (
@@ -410,7 +425,7 @@ const BusinessCalendarPage = () => {
                     
                     {reservation.notes && (
                       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Notes</div>
+                        <Badge variant="outline" className="mb-1">Notes</Badge>
                         <div className="text-sm text-gray-700 dark:text-gray-300 italic">
                           "{reservation.notes}"
                         </div>
@@ -420,7 +435,8 @@ const BusinessCalendarPage = () => {
                 ))}
               </div>
             )}
-          </div>
+            </CardContent>
+          </Card>
         )}
       </div>
       

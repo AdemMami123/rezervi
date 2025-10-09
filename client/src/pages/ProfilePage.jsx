@@ -5,6 +5,9 @@ import { authAPI } from '../api/auth';
 import { useNavigate } from 'react-router-dom';
 import AnimatedLayout from '../components/AnimatedLayout';
 import API from '../utils/api';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
@@ -62,16 +65,20 @@ const ProfilePage = () => {
   if (error) {
     return (
       <AnimatedLayout>
-        <div className="flex flex-col items-center justify-center h-screen">
-          <div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
-            {error}
-          </div>
-          <button 
-            onClick={fetchUserProfile}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Try Again
-          </button>
+        <div className="flex flex-col items-center justify-center h-screen p-4">
+          <Card className="max-w-md w-full">
+            <CardContent className="pt-6 text-center space-y-4">
+              <Badge variant="destructive" className="text-base py-2 px-4">
+                {error}
+              </Badge>
+              <Button 
+                onClick={fetchUserProfile}
+                className="w-full"
+              >
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </AnimatedLayout>
     );

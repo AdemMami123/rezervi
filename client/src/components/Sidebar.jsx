@@ -102,7 +102,7 @@ const ModernSidebar = ({
       }}
       className={cn(
         "w-full flex items-center rounded-xl transition-all duration-300 group relative overflow-hidden",
-        isCollapsed ? "px-2 py-3 justify-center" : "px-4 py-3",
+        isCollapsed ? "px-2 py-2 justify-center" : "px-3 py-2",
         activeSection === item.id
           ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30 dark:shadow-blue-500/20"
           : "text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-750 hover:shadow-md"
@@ -116,24 +116,18 @@ const ModernSidebar = ({
         initial={false}
       />
       
-      <span className="text-xl flex-shrink-0 relative z-10">{item.icon}</span>
+      <span className="text-lg flex-shrink-0 relative z-10">{item.icon}</span>
       
       <AnimatePresence>
         {!isCollapsed && (
           <motion.div
-            className="ml-3 flex-1 text-left relative z-10"
+            className="ml-2 flex-1 text-left relative z-10"
             variants={menuItemVariants}
             initial="collapsed"
             animate="expanded"
             exit="collapsed"
           >
-            <div className="font-semibold text-sm">{item.label}</div>
-            <div className={cn(
-              "text-xs",
-              activeSection === item.id ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
-            )}>
-              {item.description}
-            </div>
+            <div className="font-semibold text-sm leading-tight">{item.label}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -197,7 +191,7 @@ const ModernSidebar = ({
         style={{ minWidth: isCollapsed ? '80px' : '280px' }}
       >
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
+        <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
           <AnimatePresence>
             {!isCollapsed && (
               <motion.div
@@ -208,14 +202,14 @@ const ModernSidebar = ({
                 exit="collapsed"
               >
                 <motion.div 
-                  className="w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg"
+                  className="w-8 h-8 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg"
                   whileHover={{ rotate: 360, scale: 1.1 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <span className="text-white font-bold text-lg">R</span>
+                  <span className="text-white font-bold text-base">R</span>
                 </motion.div>
                 <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Rezervi</h1>
+                  <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Rezervi</h1>
                   <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Smart Booking</p>
                 </div>
               </motion.div>
@@ -240,15 +234,15 @@ const ModernSidebar = ({
         </div>
 
         {/* User Info */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+        <div className="p-2 border-b border-gray-200 dark:border-gray-800">
           <div className={cn(
-            "flex items-center bg-white dark:bg-gray-800 rounded-xl p-3 shadow-md",
-            isCollapsed ? "justify-center" : "space-x-3"
+            "flex items-center bg-white dark:bg-gray-800 rounded-xl p-2 shadow-md",
+            isCollapsed ? "justify-center" : "space-x-2"
           )}>
             <motion.div whileHover={{ scale: 1.1, rotate: 5 }}>
-              <Avatar className="h-12 w-12 ring-2 ring-white dark:ring-gray-700 shadow-lg">
+              <Avatar className="h-9 w-9 ring-2 ring-white dark:ring-gray-700 shadow-lg">
                 <AvatarImage src={user?.profile_picture_url} alt={user?.username} />
-                <AvatarFallback className="bg-gradient-to-br from-green-400 via-blue-500 to-purple-500 text-white font-bold text-lg">
+                <AvatarFallback className="bg-gradient-to-br from-green-400 via-blue-500 to-purple-500 text-white font-bold text-sm">
                   {user?.email?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
@@ -262,10 +256,10 @@ const ModernSidebar = ({
                   animate="expanded"
                   exit="collapsed"
                 >
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate leading-tight">
                     {user?.email?.split('@')[0] || 'User'}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate leading-tight">
                     {user?.email || 'user@example.com'}
                   </p>
                 </motion.div>
@@ -276,7 +270,7 @@ const ModernSidebar = ({
 
         {/* Navigation */}
         <ScrollArea className="flex-1">
-          <nav className="p-4 space-y-2">
+          <nav className="p-2 space-y-1">
             {navigationItems.map((item) => (
               <NavItem key={item.id} item={item} />
             ))}
@@ -284,7 +278,7 @@ const ModernSidebar = ({
         </ScrollArea>
 
         {/* Action Buttons */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-3 bg-gradient-to-b from-transparent to-gray-50 dark:to-gray-900">
+        <div className="p-2 border-t border-gray-200 dark:border-gray-800 space-y-1.5 bg-gradient-to-b from-transparent to-gray-50 dark:to-gray-900">
           <AnimatePresence>
             {!isCollapsed && !userBusiness && (
               <motion.div
@@ -295,12 +289,12 @@ const ModernSidebar = ({
               >
                 <Button
                   asChild
-                  className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 border-0"
-                  size="lg"
+                  className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 border-0 h-9"
+                  size="sm"
                 >
                   <Link to="/register-business" className="flex items-center justify-center">
-                    <span className="mr-2 text-lg">🏪</span>
-                    <span className="font-semibold">List Your Business</span>
+                    <span className="mr-1.5 text-base">🏪</span>
+                    <span className="font-semibold text-xs">List Your Business</span>
                   </Link>
                 </Button>
               </motion.div>
@@ -310,16 +304,16 @@ const ModernSidebar = ({
           <Button
             onClick={() => navigate('/subscription')}
             className={cn(
-              "w-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:to-pink-700 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 border-0",
+              "w-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:to-pink-700 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 border-0 h-9",
               isCollapsed ? 'justify-center' : ''
             )}
-            size="lg"
+            size="sm"
           >
-            <span className="text-xl">💎</span>
+            <span className="text-base">💎</span>
             <AnimatePresence>
               {!isCollapsed && (
                 <motion.span
-                  className="ml-2 font-semibold"
+                  className="ml-1.5 font-semibold text-xs"
                   variants={menuItemVariants}
                   initial="collapsed"
                   animate="expanded"
@@ -331,9 +325,9 @@ const ModernSidebar = ({
             </AnimatePresence>
           </Button>
 
-          <Separator className="my-2" />
+          <Separator className="my-1" />
 
-          <div className="pt-2">
+          <div className="py-1">
             <ThemeToggle />
           </div>
 
@@ -342,16 +336,16 @@ const ModernSidebar = ({
             onClick={onLogout}
             variant="outline"
             className={cn(
-              "w-full bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border-red-200 dark:border-red-800",
+              "w-full bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border-red-200 dark:border-red-800 h-9",
               isCollapsed ? 'justify-center' : ''
             )}
-            size="lg"
+            size="sm"
           >
-            <span className="text-xl">🚪</span>
+            <span className="text-base">🚪</span>
             <AnimatePresence>
               {!isCollapsed && (
                 <motion.span
-                  className="ml-2 font-semibold"
+                  className="ml-1.5 font-semibold text-xs"
                   variants={menuItemVariants}
                   initial="collapsed"
                   animate="expanded"

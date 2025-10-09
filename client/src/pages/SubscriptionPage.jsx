@@ -2,6 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import SubscriptionPlans from '../components/SubscriptionPlans';
 import { useTheme } from '../contexts/ThemeContext';
+import { Button } from '../components/ui/button';
+import { Card } from '../components/ui/card';
 
 const SubscriptionPage = () => {
   const navigate = useNavigate();
@@ -14,22 +16,23 @@ const SubscriptionPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
             <div className="flex items-center space-x-4">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => navigate('/')}
-                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors text-sm sm:text-base"
+                className="text-sm sm:text-base"
               >
                 ← Back to Dashboard
-              </button>
+              </Button>
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                 Subscription Plans
               </h1>
             </div>
-            <button
+            <Button
               onClick={() => navigate('/business-dashboard')}
-              className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+              className="text-sm sm:text-base"
             >
               Business Dashboard
-            </button>
+            </Button>
           </div>
         </div>
       </div>
